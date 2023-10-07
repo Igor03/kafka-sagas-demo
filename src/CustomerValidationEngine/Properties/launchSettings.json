@@ -1,0 +1,12 @@
+﻿{
+  "profiles": {
+    "CustomerValidationEngine": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "applicationUrl": "https://localhost:7099;http://localhost:5198",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+﻿{
+  "profiles": {
+    "TaxesCalculationEngine": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "applicationUrl": "https://localhost:7089;http://localhost:5188",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
