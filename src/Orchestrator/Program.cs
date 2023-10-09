@@ -1,6 +1,8 @@
+using Orchestrator.Extensions;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// builder.Services.AddCustomKafka(builder.Configuration);
+builder.Services.AddCustomKafka(builder.Configuration);
 builder.Services.AddControllers();
 builder.Services.AddHealthChecks();
 // builder.Services.AddRequestHandlers();

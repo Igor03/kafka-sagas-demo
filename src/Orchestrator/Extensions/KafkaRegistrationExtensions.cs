@@ -1,6 +1,7 @@
 using Confluent.Kafka;
 using MassTransit;
 using Orchestrator.Configuration;
+using Orchestrator.Consumers;
 using Orchestrator.Contracts;
 
 namespace Orchestrator.Extensions;
@@ -25,15 +26,37 @@ public static class KafkaRegistrationExtensions
             
             massTransit.AddRider(rider =>
             {
-                rider.AddProducer<string, SourceSystemResponse>(kafkaTopics.SourceSystemRequest);
+                rider.AddProducer<string, SourceSystemResponse>(kafkaTopics.SourceSystemResponse);
                 rider.AddProducer<string, ConsumerXRequest>(kafkaTopics.ConsumerXRequest);
                 
-                // rider.AddConsumersFromNamespaceContaining<SourceSystemRequestConsumer>();
-                // rider.AddConsumersFromNamespaceContaining<EngineResponseConsumer>();
-                
+                rider.AddConsumersFromNamespaceContaining<SourceSystemRequestConsumer>();
+
                 // Setting up two consumers based on data type
                 rider.UsingKafka(clientConfig, (riderContext, kafkaConfig) =>
                 {
+                    kafkaConfig.TopicEndpoint<string, SourceSystemRequest>(
+                       topicName: kafkaTopics.SourceSystemRequest,
+                       groupId: kafkaTopics.DefaultGroup,
+                       configure: topicConfig =>
+                       {
+                           topicConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
+                           topicConfig.ConfigureConsumer<SourceSystemRequestConsumer>(riderContext);
+
+                           topicConfig.DiscardSkippedMessages();
+                           // topicConfig.UseConsumeFilter(typeof(TelemetryInterceptorMiddlewareFilter<>), riderContext);  
+                       });
+
+                    kafkaConfig.TopicEndpoint<string, ConsumerXResponse>(
+                       topicName: kafkaTopics.ConsumerXResponse,
+                       groupId: kafkaTopics.DefaultGroup,
+                       configure: topicConfig =>
+                       {
+                           topicConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
+                           topicConfig.ConfigureConsumer<ConsumerXResponseConsumer>(riderContext);
+
+                           topicConfig.DiscardSkippedMessages();
+                           // topicConfig.UseConsumeFilter(typeof(TelemetryInterceptorMiddlewareFilter<>), riderContext);  
+                       });
                 });
             });
         });
