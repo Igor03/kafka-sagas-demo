@@ -1,4 +1,4 @@
-namespace Producer.Controllers;
+namespace Orchestrator.Contracts;
 
 public class SourceSystemRequest
 {

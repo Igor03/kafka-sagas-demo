@@ -8,12 +8,23 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="AspNetCore.HealthChecks.Kafka" Version="7.0.0" />
+        <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="7.0.0" />
+        <PackageReference Include="MassTransit.Abstractions" Version="8.1.0" />
+        <PackageReference Include="MediatR" Version="12.1.1" />
+        <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="7.0.0" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1"/>
+        <PackageReference Include="MassTransit" Version="8.1.0" />
+        <PackageReference Include="MassTransit.AspNetCore" Version="7.3.1" />
+        <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="7.3.1" />
+        <PackageReference Include="MassTransit.Kafka" Version="8.1.0" />
     </ItemGroup>
 
     <ItemGroup>
       <Folder Include="Consumers\" />
-      <Folder Include="Contracts\" />
-      <Folder Include="Extensions\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="Extensions\Kafka.cs" />
     </ItemGroup>
 </Project>
