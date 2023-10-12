@@ -1,8 +1,8 @@
-using Orchestrator.Contracts.TaxesCalculationEngine;
+using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
 
-namespace Orchestrator.Contracts.OrderManagement;
+namespace OrdersOrchestrator.Contracts.OrderManagement;
 
-public class OrderResponse
+public sealed class OrderResponse
 {
     public OrderResponse(Guid orderId, TaxesCalculationResponse taxesCalculation, DateTime finishedAt)
     {

@@ -1,4 +1,4 @@
-namespace Orchestrator.Configuration;
+namespace OrdersOrchestrator.Configuration;
 
 public record KafkaTopics
 {

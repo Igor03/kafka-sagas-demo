@@ -1,7 +1,7 @@
 using MassTransit;
-using Orchestrator.Contracts;
+using OrdersOrchestrator.Contracts;
 
-namespace Orchestrator.StateMachines;
+namespace OrdersOrchestrator.StateMachines;
 
 public sealed class RequestXStateMachine : MassTransitStateMachine<RequestXState>
 {

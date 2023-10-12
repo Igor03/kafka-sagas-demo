@@ -1,8 +1,8 @@
 ﻿using MassTransit;
-using Orchestrator.Contracts.OrderManagement;
-using Orchestrator.Contracts.TaxesCalculationEngine;
+using OrdersOrchestrator.Contracts.OrderManagement;
+using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
 
-namespace Orchestrator.Consumers
+namespace OrdersOrchestrator.Consumers
 {
     public class OrderManagementSystemConsumer : IConsumer<OrderRequest>
     {

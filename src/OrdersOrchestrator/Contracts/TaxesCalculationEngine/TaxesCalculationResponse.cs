@@ -1,6 +1,6 @@
-namespace Orchestrator.Contracts.TaxesCalculationEngine;
+namespace OrdersOrchestrator.Contracts.TaxesCalculationEngine;
 
-public class TaxesCalculationResponse
+public sealed class TaxesCalculationResponse
 {
     public TaxesCalculationResponse(string itemId, decimal taxAAA, decimal taxBBB, decimal taxCCC)
     {

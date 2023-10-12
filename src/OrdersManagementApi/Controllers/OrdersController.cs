@@ -1,21 +1,21 @@
- 
 using MassTransit;
 using Microsoft.AspNetCore.Mvc;
+using OrdersManagementApi.Contracts;
 
-namespace Producer.Controllers;
+namespace OrdersManagementApi.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class KafkaController : ControllerBase
+public class OrdersController : ControllerBase
 {
     private readonly ITopicProducer<string, OrderRequest> _producer;
 
-    public KafkaController(ITopicProducer<string, OrderRequest> producer)
+    public OrdersController(ITopicProducer<string, OrderRequest> producer)
     {
         _producer = producer;
     }
 
-    [HttpPost(Name = "Produce")]
+    [HttpPost(Name = "Place")]
     public async Task<ActionResult> Post([FromBody] OrderRequest orderRequest)
     {
         var key = Guid.NewGuid();

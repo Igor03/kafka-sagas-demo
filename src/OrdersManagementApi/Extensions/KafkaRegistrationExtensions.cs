@@ -1,9 +1,9 @@
 using Confluent.Kafka;
 using MassTransit;
-using Producer.Configuration;
-using Producer.Controllers;
+using OrdersManagementApi.Configuration;
+using OrdersManagementApi.Contracts;
 
-namespace Producer.Extensions;
+namespace OrdersManagementApi.Extensions;
 
 internal static class KafkaExtensions
 {

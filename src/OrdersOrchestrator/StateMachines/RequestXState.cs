@@ -1,6 +1,6 @@
 using MassTransit;
 
-namespace Orchestrator.StateMachines;
+namespace OrdersOrchestrator.StateMachines;
 
 public sealed class RequestXState : SagaStateMachineInstance, ISagaVersion
 {

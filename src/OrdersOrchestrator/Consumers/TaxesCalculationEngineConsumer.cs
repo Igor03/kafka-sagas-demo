@@ -1,7 +1,7 @@
 ﻿using MassTransit;
-using Orchestrator.Contracts.TaxesCalculationEngine;
+using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
 
-namespace Orchestrator.Consumers
+namespace OrdersOrchestrator.Consumers
 {
     public class TaxesCalculationEngineConsumer : IConsumer<TaxesCalculationResponse>
     {

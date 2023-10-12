@@ -1,6 +1,6 @@
-namespace Orchestrator.Contracts.TaxesCalculationEngine;
+namespace OrdersOrchestrator.Contracts.TaxesCalculationEngine;
 
-public class TaxesCalculationRequest
+public sealed class TaxesCalculationRequest
 {
     public TaxesCalculationRequest(string itemId)
     {

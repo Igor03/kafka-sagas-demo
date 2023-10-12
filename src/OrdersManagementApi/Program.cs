@@ -1,4 +1,4 @@
-using Producer.Extensions;
+using OrdersManagementApi.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 

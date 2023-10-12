@@ -1,4 +1,4 @@
-using Orchestrator.Extensions;
+using OrdersOrchestrator.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 

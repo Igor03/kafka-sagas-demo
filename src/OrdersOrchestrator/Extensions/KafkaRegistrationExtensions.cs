@@ -1,11 +1,11 @@
 using Confluent.Kafka;
 using MassTransit;
-using Orchestrator.Configuration;
-using Orchestrator.Consumers;
-using Orchestrator.Contracts.OrderManagement;
-using Orchestrator.Contracts.TaxesCalculationEngine;
+using OrdersOrchestrator.Configuration;
+using OrdersOrchestrator.Consumers;
+using OrdersOrchestrator.Contracts.OrderManagement;
+using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
 
-namespace Orchestrator.Extensions;
+namespace OrdersOrchestrator.Extensions;
 
 public static class KafkaRegistrationExtensions
 {

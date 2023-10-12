@@ -1,8 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Producer", "src\Producer\Producer.csproj", "{A6EDEE5B-9D7C-4F93-8F7B-05F9FA90DACF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrdersManagementApi", "src\OrdersManagementApi\OrdersManagementApi.csproj", "{A6EDEE5B-9D7C-4F93-8F7B-05F9FA90DACF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orchestrator", "src\Orchestrator\Orchestrator.csproj", "{02C3961C-8C73-4607-9398-D4BAF7AE881D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrdersOrchestrator", "src\OrdersOrchestrator\OrdersOrchestrator.csproj", "{02C3961C-8C73-4607-9398-D4BAF7AE881D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaxesCalculationEngine", "src\TaxesCalculationEngine\TaxesCalculationEngine.csproj", "{901C6735-14DF-4067-AE6D-22D42E465BEB}"
 EndProject

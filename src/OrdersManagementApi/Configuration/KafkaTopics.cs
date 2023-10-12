@@ -1,4 +1,4 @@
-namespace Producer.Configuration;
+namespace OrdersManagementApi.Configuration;
 
 public record KafkaTopics
 {
