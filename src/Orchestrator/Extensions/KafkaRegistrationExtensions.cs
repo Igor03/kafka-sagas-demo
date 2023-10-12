@@ -2,7 +2,8 @@ using Confluent.Kafka;
 using MassTransit;
 using Orchestrator.Configuration;
 using Orchestrator.Consumers;
-using Orchestrator.Contracts;
+using Orchestrator.Contracts.OrderManagement;
+using Orchestrator.Contracts.TaxesCalculationEngine;
 
 namespace Orchestrator.Extensions;
 
@@ -26,33 +27,33 @@ public static class KafkaRegistrationExtensions
             
             massTransit.AddRider(rider =>
             {
-                rider.AddProducer<string, SourceSystemResponse>(kafkaTopics.SourceSystemResponse);
-                rider.AddProducer<string, ConsumerXRequest>(kafkaTopics.ConsumerXRequest);
+                rider.AddProducer<string, OrderResponse>(kafkaTopics.OrderManagementSystemResponse);
+                rider.AddProducer<string, TaxesCalculationRequest>(kafkaTopics.TaxesCalculationEngineRequest);
                 
-                rider.AddConsumersFromNamespaceContaining<SourceSystemRequestConsumer>();
+                rider.AddConsumersFromNamespaceContaining<OrderManagementSystemConsumer>();
 
                 // Setting up two consumers based on data type
                 rider.UsingKafka(clientConfig, (riderContext, kafkaConfig) =>
                 {
-                    kafkaConfig.TopicEndpoint<string, SourceSystemRequest>(
-                       topicName: kafkaTopics.SourceSystemRequest,
+                    kafkaConfig.TopicEndpoint<string, OrderRequest>(
+                       topicName: kafkaTopics.OrderManagementSystemRequest,
                        groupId: kafkaTopics.DefaultGroup,
                        configure: topicConfig =>
                        {
                            topicConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
-                           topicConfig.ConfigureConsumer<SourceSystemRequestConsumer>(riderContext);
+                           topicConfig.ConfigureConsumer<OrderManagementSystemConsumer>(riderContext);
 
                            topicConfig.DiscardSkippedMessages();
                            // topicConfig.UseConsumeFilter(typeof(TelemetryInterceptorMiddlewareFilter<>), riderContext);  
                        });
 
-                    kafkaConfig.TopicEndpoint<string, ConsumerXResponse>(
-                       topicName: kafkaTopics.ConsumerXResponse,
+                    kafkaConfig.TopicEndpoint<string, TaxesCalculationResponse>(
+                       topicName: kafkaTopics.TaxesCalculationEngineResponse,
                        groupId: kafkaTopics.DefaultGroup,
                        configure: topicConfig =>
                        {
                            topicConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
-                           topicConfig.ConfigureConsumer<ConsumerXResponseConsumer>(riderContext);
+                           topicConfig.ConfigureConsumer<TaxesCalculationEngineConsumer>(riderContext);
 
                            topicConfig.DiscardSkippedMessages();
                            // topicConfig.UseConsumeFilter(typeof(TelemetryInterceptorMiddlewareFilter<>), riderContext);  

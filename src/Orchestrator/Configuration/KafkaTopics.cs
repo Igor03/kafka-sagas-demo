@@ -2,9 +2,9 @@ namespace Orchestrator.Configuration;
 
 public record KafkaTopics
 {
-    public string SourceSystemRequest { get; set; } = string.Empty;
-    public string SourceSystemResponse { get; set; } = string.Empty;
-    public string ConsumerXRequest { get; set; } = string.Empty;
-    public string ConsumerXResponse { get; set; } = string.Empty;
-    public string DefaultGroup { get; set; } = "default.group";
+    public string OrderManagementSystemRequest { get; set; } = string.Empty;
+    public string OrderManagementSystemResponse { get; set; } = string.Empty;
+    public string TaxesCalculationEngineRequest { get; set; } = string.Empty;
+    public string TaxesCalculationEngineResponse { get; set; } = string.Empty;
+    public string DefaultGroup { get; set; } = "orders_orchestrator.group";
 }

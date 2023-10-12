@@ -4,7 +4,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Producer", "src\Producer\Pr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orchestrator", "src\Orchestrator\Orchestrator.csproj", "{02C3961C-8C73-4607-9398-D4BAF7AE881D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsumerX", "src\ConsumerX\ConsumerX.csproj", "{E8623083-D262-4D80-87AC-3A9BB4B29560}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaxesCalculationEngine", "src\TaxesCalculationEngine\TaxesCalculationEngine.csproj", "{901C6735-14DF-4067-AE6D-22D42E465BEB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -20,9 +20,9 @@ Global
 		{02C3961C-8C73-4607-9398-D4BAF7AE881D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{02C3961C-8C73-4607-9398-D4BAF7AE881D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{02C3961C-8C73-4607-9398-D4BAF7AE881D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E8623083-D262-4D80-87AC-3A9BB4B29560}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E8623083-D262-4D80-87AC-3A9BB4B29560}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E8623083-D262-4D80-87AC-3A9BB4B29560}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E8623083-D262-4D80-87AC-3A9BB4B29560}.Release|Any CPU.Build.0 = Release|Any CPU
+		{901C6735-14DF-4067-AE6D-22D42E465BEB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{901C6735-14DF-4067-AE6D-22D42E465BEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{901C6735-14DF-4067-AE6D-22D42E465BEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{901C6735-14DF-4067-AE6D-22D42E465BEB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

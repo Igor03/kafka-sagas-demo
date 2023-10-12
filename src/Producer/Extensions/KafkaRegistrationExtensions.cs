@@ -24,7 +24,7 @@ internal static class KafkaExtensions
             configureMassTransit.UsingInMemory();
             configureMassTransit.AddRider(configureRider =>
             {
-                configureRider.AddProducer<string, SourceSystemRequest>(kafkaTopics.SourceSystem);
+                configureRider.AddProducer<string, OrderRequest>(kafkaTopics.SourceSystem);
                 configureRider.UsingKafka(clientConfig, (_, _) => { });
             });
         });

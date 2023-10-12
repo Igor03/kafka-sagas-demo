@@ -1,16 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-<PropertyGroup>
+    <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
-        <UserSecretsId>dotnet-ConsumerX-CBC8EF68-D1AA-4F6C-A2F1-9CFFAB3B5790</UserSecretsId>
+        <UserSecretsId>dotnet-TaxesCalculationEngine-8E558102-1BE3-4176-A559-FA88BD3E8B30</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="AspNetCore.HealthChecks.Kafka" Version="7.0.0" />
         <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="7.0.0" />
         <PackageReference Include="MassTransit.Abstractions" Version="8.1.0" />
+        <PackageReference Include="MassTransit.MongoDb" Version="8.1.0" />
         <PackageReference Include="MediatR" Version="12.1.1" />
         <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="7.0.0" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />

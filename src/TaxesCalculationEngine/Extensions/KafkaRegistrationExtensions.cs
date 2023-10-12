@@ -1,12 +1,12 @@
 ﻿using Confluent.Kafka;
 using ConsumerX.Configuration;
-using ConsumerX.Consumers;
-using ConsumerX.Contracts;
 using MassTransit;
+using TaxesCalculationEngine.Contracts;
+using TaxexCalculationEngine.Consumers;
 
-namespace ConsumerX.Extensions
+namespace TaxesCalculationEngine.Extensions
 {
-    public static class KafkaRgistrationExtensions
+    public static class KafkaRegistrationExtensions
     {
         internal static IServiceCollection AddCustomKafka(this IServiceCollection services, IConfiguration configuration)
         {
@@ -26,19 +26,19 @@ namespace ConsumerX.Extensions
 
                 massTransit.AddRider(rider =>
                 {
-                    rider.AddProducer<string, ConsumerXResponse>(kafkaTopics.ConsumerXResponse);
-                    rider.AddConsumersFromNamespaceContaining<XRequestConsumer>();
+                    rider.AddProducer<string, TaxesCalculationResponse>(kafkaTopics.TaxesCalculationEngineResponse);
+                    rider.AddConsumersFromNamespaceContaining<TaxesCalculationConsumer>();
 
-                    // Setting up two consumers based on data type
+                    // Receiving Taxes Calculation request
                     rider.UsingKafka(clientConfig, (riderContext, kafkaConfig) =>
                     {
-                        kafkaConfig.TopicEndpoint<string, ConsumerXRequest>(
-                           topicName: kafkaTopics.ConsumerXRequest,
+                        kafkaConfig.TopicEndpoint<string, TaxesCalculationRequest>(
+                           topicName: kafkaTopics.TaxesCalculationEngineRequest,
                            groupId: kafkaTopics.DefaultGroup,
                            configure: topicConfig =>
                            {
                                topicConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
-                               topicConfig.ConfigureConsumer<XRequestConsumer>(riderContext);
+                               topicConfig.ConfigureConsumer<TaxesCalculationConsumer>(riderContext);
 
                                topicConfig.DiscardSkippedMessages();
                                // topicConfig.UseConsumeFilter(typeof(TelemetryInterceptorMiddlewareFilter<>), riderContext);  

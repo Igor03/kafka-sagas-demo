@@ -8,22 +8,24 @@ namespace Producer.Controllers;
 [Route("[controller]")]
 public class KafkaController : ControllerBase
 {
-    private readonly ITopicProducer<string, SourceSystemRequest> _producer;
+    private readonly ITopicProducer<string, OrderRequest> _producer;
 
-    public KafkaController(ITopicProducer<string, SourceSystemRequest> producer)
+    public KafkaController(ITopicProducer<string, OrderRequest> producer)
     {
         _producer = producer;
     }
 
     [HttpPost(Name = "Produce")]
-    public async Task<ActionResult> Post([FromBody] SourceSystemRequest message)
+    public async Task<ActionResult> Post([FromBody] OrderRequest orderRequest)
     {
-        var key = Guid.NewGuid().ToString();
+        var key = Guid.NewGuid();
 
+        orderRequest.OrderId = key;
+        
         await _producer
-            .Produce(key, message)
+            .Produce(key.ToString(), orderRequest)
             .ConfigureAwait(false);
 
-        return Created(key, message);
+        return Accepted(orderRequest);
     }
 }
