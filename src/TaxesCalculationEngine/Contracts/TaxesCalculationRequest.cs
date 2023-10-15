@@ -6,6 +6,8 @@ public class TaxesCalculationRequest
     {
         ItemId = itemId;
     }
+
+    public Guid CorrelationId { get; set; }
     
     public string ItemId { get; set; }
 }

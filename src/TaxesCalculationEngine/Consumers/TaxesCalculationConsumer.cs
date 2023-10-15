@@ -24,6 +24,8 @@ namespace TaxexCalculationEngine.Consumers
                 TaxBBB = (decimal)rnd.NextInt64(0, 100) / 10,
                 TaxCCC = (decimal)rnd.NextInt64(0, 100) / 10,
             };
+
+            response.CorrelationId = context.Message.CorrelationId;
             
             // Sending the calculated taxes based on the ItemId
             await taxesCalculationProducer

@@ -31,7 +31,7 @@ public static class KafkaRegistrationExtensions
                 rider.AddSagaStateMachine<OrderRequestStateMachine, OrderRequestState>()
                     .InMemoryRepository();
                 
-                rider.AddProducer<string, OrderResponseEvent>(kafkaTopics.OrderManagementSystemResponse);
+                rider.AddProducer<OrderResponseEvent>(kafkaTopics.OrderManagementSystemResponse);
                 rider.AddProducer<TaxesCalculationRequestEvent>(kafkaTopics.TaxesCalculationEngineRequest);
                 
                 rider.AddConsumersFromNamespaceContaining<OrderManagementSystemConsumer>();
@@ -63,6 +63,9 @@ public static class KafkaRegistrationExtensions
                            topicConfig.ConfigureConsumer<TaxesCalculationEngineConsumer>(riderContext);
 
                            topicConfig.DiscardSkippedMessages();
+                           
+                           topicConfig.ConfigureSaga<OrderRequestState>(riderContext);
+                           
                            // topicConfig.UseConsumeFilter(typeof(TelemetryInterceptorMiddlewareFilter<>), riderContext);  
                        });
                 });

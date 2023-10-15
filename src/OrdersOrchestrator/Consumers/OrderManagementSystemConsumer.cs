@@ -23,8 +23,8 @@ namespace OrdersOrchestrator.Consumers
                 CorrelationId = context.Message.CorrelationId,
             };
             
-            await taxesCalculationEngineProducer
-                .Produce(taxesCalculationRequest);
+            // await taxesCalculationEngineProducer
+            //     .Produce(taxesCalculationRequest);
         }
     }
 }
