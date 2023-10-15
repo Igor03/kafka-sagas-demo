@@ -3,13 +3,9 @@ using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
 
 namespace OrdersOrchestrator.Consumers
 {
-    public class TaxesCalculationEngineConsumer : IConsumer<TaxesCalculationResponse>
+    public class TaxesCalculationEngineConsumer : IConsumer<TaxesCalculationResponseEvent>
     {
-        public TaxesCalculationEngineConsumer()
-        {
-        }
-
-        public Task Consume(ConsumeContext<TaxesCalculationResponse> context)
+        public Task Consume(ConsumeContext<TaxesCalculationResponseEvent> context)
         {
             ArgumentNullException.ThrowIfNull(context, nameof(context));
             

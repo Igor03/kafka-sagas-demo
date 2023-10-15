@@ -20,7 +20,7 @@ public class OrdersController : ControllerBase
     {
         var key = Guid.NewGuid();
 
-        orderRequest.OrderId = key;
+        orderRequest.CorrelationId = key;
         
         await _producer
             .Produce(key.ToString(), orderRequest)

@@ -2,14 +2,14 @@ namespace OrdersManagementApi.Contracts;
 
 public sealed class OrderRequest
 {
-    public OrderRequest(Guid orderId, string customerId, string itemId)
+    public OrderRequest(Guid correlationId, string customerId, string itemId)
     {
-        OrderId = orderId == Guid.Empty ? Guid.NewGuid() : orderId;
+        CorrelationId = correlationId == Guid.Empty ? Guid.NewGuid() : correlationId;
         CustomerId = customerId;
         ItemId = itemId;
     }
 
-    public Guid OrderId { get; set; }
+    public Guid CorrelationId { get; set; }
 
     public string CustomerId { get; set; }
 

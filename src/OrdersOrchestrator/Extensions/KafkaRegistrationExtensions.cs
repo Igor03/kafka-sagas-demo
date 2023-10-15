@@ -4,6 +4,7 @@ using OrdersOrchestrator.Configuration;
 using OrdersOrchestrator.Consumers;
 using OrdersOrchestrator.Contracts.OrderManagement;
 using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
+using OrdersOrchestrator.StateMachines;
 
 namespace OrdersOrchestrator.Extensions;
 
@@ -27,15 +28,18 @@ public static class KafkaRegistrationExtensions
             
             massTransit.AddRider(rider =>
             {
-                rider.AddProducer<string, OrderResponse>(kafkaTopics.OrderManagementSystemResponse);
-                rider.AddProducer<string, TaxesCalculationRequest>(kafkaTopics.TaxesCalculationEngineRequest);
+                rider.AddSagaStateMachine<OrderRequestStateMachine, OrderRequestState>()
+                    .InMemoryRepository();
+                
+                rider.AddProducer<string, OrderResponseEvent>(kafkaTopics.OrderManagementSystemResponse);
+                rider.AddProducer<TaxesCalculationRequestEvent>(kafkaTopics.TaxesCalculationEngineRequest);
                 
                 rider.AddConsumersFromNamespaceContaining<OrderManagementSystemConsumer>();
 
                 // Setting up two consumers based on data type
                 rider.UsingKafka(clientConfig, (riderContext, kafkaConfig) =>
                 {
-                    kafkaConfig.TopicEndpoint<string, OrderRequest>(
+                    kafkaConfig.TopicEndpoint<string, OrderRequestEvent>(
                        topicName: kafkaTopics.OrderManagementSystemRequest,
                        groupId: kafkaTopics.DefaultGroup,
                        configure: topicConfig =>
@@ -44,10 +48,13 @@ public static class KafkaRegistrationExtensions
                            topicConfig.ConfigureConsumer<OrderManagementSystemConsumer>(riderContext);
 
                            topicConfig.DiscardSkippedMessages();
+                           
+                           topicConfig.ConfigureSaga<OrderRequestState>(riderContext);
+                           
                            // topicConfig.UseConsumeFilter(typeof(TelemetryInterceptorMiddlewareFilter<>), riderContext);  
                        });
 
-                    kafkaConfig.TopicEndpoint<string, TaxesCalculationResponse>(
+                    kafkaConfig.TopicEndpoint<string, TaxesCalculationResponseEvent>(
                        topicName: kafkaTopics.TaxesCalculationEngineResponse,
                        groupId: kafkaTopics.DefaultGroup,
                        configure: topicConfig =>

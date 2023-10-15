@@ -4,26 +4,27 @@ using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
 
 namespace OrdersOrchestrator.Consumers
 {
-    public class OrderManagementSystemConsumer : IConsumer<OrderRequest>
+    public class OrderManagementSystemConsumer : IConsumer<OrderRequestEvent>
     {
-        private readonly ITopicProducer<string, TaxesCalculationRequest> taxesCalculationEngineProducer;
+        private readonly ITopicProducer<TaxesCalculationRequestEvent> taxesCalculationEngineProducer;
 
-        public OrderManagementSystemConsumer(ITopicProducer<string, TaxesCalculationRequest> taxesCalculationEngineProducer)
+        public OrderManagementSystemConsumer(ITopicProducer<TaxesCalculationRequestEvent> taxesCalculationEngineProducer)
         {
             this.taxesCalculationEngineProducer = taxesCalculationEngineProducer;
         }
 
-        public async Task Consume(ConsumeContext<OrderRequest> context)
+        public async Task Consume(ConsumeContext<OrderRequestEvent> context)
         {
             ArgumentNullException.ThrowIfNull(context, nameof(context));
 
-            var taxesCalculationRequest = new TaxesCalculationRequest
+            var taxesCalculationRequest = new TaxesCalculationRequestEvent
             {
                 ItemId = context.Message.ItemId,
+                CorrelationId = context.Message.CorrelationId,
             };
             
             await taxesCalculationEngineProducer
-                .Produce(context.GetKey<string>(), taxesCalculationRequest);
+                .Produce(taxesCalculationRequest);
         }
     }
 }
