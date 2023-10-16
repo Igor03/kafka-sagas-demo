@@ -1,30 +1,43 @@
 ﻿using MassTransit;
+using OrdersOrchestrator.Contracts.ApiService;
+using OrdersOrchestrator.Contracts.CustomerValidationEngine;
 using OrdersOrchestrator.Contracts.OrderManagement;
 using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
+using OrdersOrchestrator.Services;
 
 namespace OrdersOrchestrator.Consumers
 {
     public class OrderManagementSystemConsumer : IConsumer<OrderRequestEvent>
     {
         private readonly ITopicProducer<TaxesCalculationRequestEvent> taxesCalculationEngineProducer;
+        private readonly ITopicProducer<CustomerValidationRequestEvent> customerValidationResponseEvent;
+        private readonly IApiService apiService;
 
-        public OrderManagementSystemConsumer(ITopicProducer<TaxesCalculationRequestEvent> taxesCalculationEngineProducer)
+        public OrderManagementSystemConsumer(
+            ITopicProducer<TaxesCalculationRequestEvent> taxesCalculationEngineProducer, 
+            ITopicProducer<CustomerValidationRequestEvent> customerValidationResponseEvent, 
+            IApiService apiService)
         {
             this.taxesCalculationEngineProducer = taxesCalculationEngineProducer;
+            this.customerValidationResponseEvent = customerValidationResponseEvent;
+            this.apiService = apiService;
         }
 
         public async Task Consume(ConsumeContext<OrderRequestEvent> context)
         {
             ArgumentNullException.ThrowIfNull(context, nameof(context));
 
-            var taxesCalculationRequest = new TaxesCalculationRequestEvent
+            if (await apiService.ValidateRequestAsync(context.Message.CustomerId) is ApiServiceResponse response)
             {
-                ItemId = context.Message.ItemId,
-                CorrelationId = context.Message.CorrelationId,
-            };
-            
-            // await taxesCalculationEngineProducer
-            //     .Produce(taxesCalculationRequest);
+                var customerValidationRequest = new CustomerValidationRequestEvent
+                {
+                    CustomerId = context.Message.CustomerId,
+                    CorrelationId = context.Message.CorrelationId,
+                };
+
+                await customerValidationResponseEvent
+                    .Produce(customerValidationRequest);
+            }
         }
     }
 }

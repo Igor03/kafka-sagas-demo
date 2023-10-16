@@ -2,6 +2,7 @@ using Confluent.Kafka;
 using MassTransit;
 using OrdersOrchestrator.Configuration;
 using OrdersOrchestrator.Consumers;
+using OrdersOrchestrator.Contracts.CustomerValidationEngine;
 using OrdersOrchestrator.Contracts.OrderManagement;
 using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
 using OrdersOrchestrator.StateMachines;
@@ -33,6 +34,7 @@ public static class KafkaRegistrationExtensions
                 
                 rider.AddProducer<OrderResponseEvent>(kafkaTopics.OrderManagementSystemResponse);
                 rider.AddProducer<TaxesCalculationRequestEvent>(kafkaTopics.TaxesCalculationEngineRequest);
+                rider.AddProducer<CustomerValidationRequestEvent>(kafkaTopics.CustomerValidationEngineRequest);
                 
                 rider.AddConsumersFromNamespaceContaining<OrderManagementSystemConsumer>();
 
@@ -66,6 +68,21 @@ public static class KafkaRegistrationExtensions
                            
                            topicConfig.ConfigureSaga<OrderRequestState>(riderContext);
                            
+                           // topicConfig.UseConsumeFilter(typeof(TelemetryInterceptorMiddlewareFilter<>), riderContext);  
+                       });
+
+                    kafkaConfig.TopicEndpoint<string, CustomerValidationResponseEvent>(
+                       topicName: kafkaTopics.CustomerValidationEngineResponse,
+                       groupId: kafkaTopics.DefaultGroup,
+                       configure: topicConfig =>
+                       {
+                           topicConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
+                           topicConfig.ConfigureConsumer<CustomerValidationEngineConsumer>(riderContext);
+
+                           topicConfig.DiscardSkippedMessages();
+
+                           topicConfig.ConfigureSaga<OrderRequestState>(riderContext);
+
                            // topicConfig.UseConsumeFilter(typeof(TelemetryInterceptorMiddlewareFilter<>), riderContext);  
                        });
                 });
