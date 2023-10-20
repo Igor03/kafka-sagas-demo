@@ -13,9 +13,10 @@ public class OrderRequestStateMachine : MassTransitStateMachine<OrderRequestStat
         InstanceState(x => x.CurrentState, Placed);
 
         Event(() => OrderRequestedEvent, x => x.CorrelateById(context => context.Message.CorrelationId));
-        Event(() => TaxesCalculationResponseEvent, x => x.CorrelateById(context => context.Message.CorrelationId));
         Event(() => CustomerValidationResponseEvent, x => x.CorrelateById(context => context.Message.CorrelationId));
-        
+        Event(() => TaxesCalculationResponseEvent, x => x.CorrelateById(context => context.Message.CorrelationId));
+
+
         Initially(
             When(OrderRequestedEvent)
             .Then(x =>
