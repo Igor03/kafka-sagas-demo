@@ -8,7 +8,6 @@ namespace OrdersOrchestrator.Consumers
         public Task Consume(ConsumeContext<TaxesCalculationResponseEvent> context)
         {
             ArgumentNullException.ThrowIfNull(context, nameof(context));
-            
             return Task.CompletedTask;
         }
     }

@@ -2,6 +2,7 @@ using Confluent.Kafka;
 using MassTransit;
 using OrdersOrchestrator.Configuration;
 using OrdersOrchestrator.Consumers;
+using OrdersOrchestrator.Contracts;
 using OrdersOrchestrator.Contracts.CustomerValidationEngine;
 using OrdersOrchestrator.Contracts.OrderManagement;
 using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
@@ -29,12 +30,20 @@ public static class KafkaRegistrationExtensions
             
             massTransit.AddRider(rider =>
             {
-                rider.AddSagaStateMachine<OrderRequestStateMachine, OrderRequestState>()
-                    .InMemoryRepository();
+                rider.AddSagaStateMachine<OrderRequestStateMachine, OrderRequestState>(c =>
+                {
+                    c.UseMessageRetry(r =>
+                    {
+                        r.Interval(5, TimeSpan.FromSeconds(1));
+                    });
+                })
+                .InMemoryRepository();
                 
                 rider.AddProducer<OrderResponseEvent>(kafkaTopics.OrderManagementSystemResponse);
                 rider.AddProducer<TaxesCalculationRequestEvent>(kafkaTopics.TaxesCalculationEngineRequest);
                 rider.AddProducer<CustomerValidationRequestEvent>(kafkaTopics.CustomerValidationEngineRequest);
+                rider.AddProducer<DeadLetterMessage>(kafkaTopics.Deadletter);
+                rider.AddProducer<OrderRequestEvent>(kafkaTopics.OrderManagementSystemRequest);
                 
                 rider.AddConsumersFromNamespaceContaining<OrderManagementSystemConsumer>();
 
@@ -48,10 +57,14 @@ public static class KafkaRegistrationExtensions
                        {
                            topicConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
                            topicConfig.ConfigureConsumer<OrderManagementSystemConsumer>(riderContext);
-
                            topicConfig.DiscardSkippedMessages();
-                           
                            topicConfig.ConfigureSaga<OrderRequestState>(riderContext);
+                           
+                           //topicConfig.UseMessageRetry(x =>
+                           //{
+                           //    x.Handle<ArgumentException>();
+                           //    x.Interval(5, TimeSpan.FromSeconds(1));
+                           //});
                            
                            // topicConfig.UseConsumeFilter(typeof(TelemetryInterceptorMiddlewareFilter<>), riderContext);  
                        });
@@ -63,11 +76,15 @@ public static class KafkaRegistrationExtensions
                        {
                            topicConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
                            topicConfig.ConfigureConsumer<TaxesCalculationEngineConsumer>(riderContext);
-
                            topicConfig.DiscardSkippedMessages();
-                           
                            topicConfig.ConfigureSaga<OrderRequestState>(riderContext);
                            
+                           //topicConfig.UseMessageRetry(x =>
+                           //{
+                           //    x.Handle<ArgumentException>();
+                           //    x.Interval(5, TimeSpan.FromSeconds(1));
+                           //});
+
                            // topicConfig.UseConsumeFilter(typeof(TelemetryInterceptorMiddlewareFilter<>), riderContext);  
                        });
 
@@ -78,13 +95,29 @@ public static class KafkaRegistrationExtensions
                        {
                            topicConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
                            topicConfig.ConfigureConsumer<CustomerValidationEngineConsumer>(riderContext);
-
                            topicConfig.DiscardSkippedMessages();
-
                            topicConfig.ConfigureSaga<OrderRequestState>(riderContext);
+                           
+                           //topicConfig.UseMessageRetry(x =>
+                           //{
+                           //    x.Handle<ArgumentException>();
+                           //    x.Interval(5, TimeSpan.FromSeconds(1));
+                           //});
 
                            // topicConfig.UseConsumeFilter(typeof(TelemetryInterceptorMiddlewareFilter<>), riderContext);  
                        });
+
+                    kafkaConfig.TopicEndpoint<string, DeadLetterMessage>(
+                      topicName: kafkaTopics.Deadletter,
+                      groupId: kafkaTopics.DefaultGroup,
+                      configure: topicConfig =>
+                      {
+                          topicConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
+                          topicConfig.ConfigureConsumer<DeadLetterConsumer>(riderContext);
+                          topicConfig.DiscardSkippedMessages();
+                          topicConfig.ConfigureSaga<OrderRequestState>(riderContext);
+                      });
+
                 });
             });
         });

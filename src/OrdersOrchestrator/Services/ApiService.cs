@@ -12,5 +12,10 @@ namespace OrdersOrchestrator.Services
                     SomeResponseValue = "Some data",
                 });
         }
+
+        public Task<bool> ValidateIncomingRequestAsync()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

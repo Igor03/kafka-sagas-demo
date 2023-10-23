@@ -25,4 +25,8 @@
     <ItemGroup>
       <Compile Remove="Extensions\Kafka.cs" />
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Middlewares\" />
+    </ItemGroup>
 </Project>

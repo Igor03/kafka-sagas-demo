@@ -1,9 +1,6 @@
 ﻿using MassTransit;
-using OrdersOrchestrator.Contracts;
-using OrdersOrchestrator.Contracts.ApiService;
 using OrdersOrchestrator.Contracts.CustomerValidationEngine;
 using OrdersOrchestrator.Contracts.OrderManagement;
-using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
 using OrdersOrchestrator.Services;
 
 namespace OrdersOrchestrator.Consumers
@@ -24,7 +21,7 @@ namespace OrdersOrchestrator.Consumers
         public async Task Consume(ConsumeContext<OrderRequestEvent> context)
         {
             ArgumentNullException.ThrowIfNull(context, nameof(context));
-            
+
             // calling some external service before producing data and go to the next step of out state machine
             await apiService
                 .SomeApiCallAsync()

@@ -1,6 +1,7 @@
 ﻿using MassTransit;
 using MassTransit.SagaStateMachine;
 using Newtonsoft.Json;
+using OrdersOrchestrator.Contracts;
 using OrdersOrchestrator.Contracts.CustomerValidationEngine;
 using OrdersOrchestrator.Contracts.OrderManagement;
 using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
@@ -29,11 +30,12 @@ namespace OrdersOrchestrator.StateMachines
                 context.Saga.CustomerType = context.Message.CustomerType;
                 context.Saga.UpdatedAt = DateTime.Now;
                 
-                var @event = new TaxesCalculationRequestEvent
+                var @event = new
                 {
-                    CustomerType = context.Message.CustomerType,
-                    CorrelationId = context.Saga.CorrelationId,
+                    context.Message.CustomerType,
+                    context.Saga.CorrelationId,
                     ItemId = context.Saga.ItemId!,
+
                 };
                 return context.Init<TaxesCalculationRequestEvent>(@event);
             });
@@ -46,14 +48,14 @@ namespace OrdersOrchestrator.StateMachines
             var @event = binder.Produce(context =>
             {
                 context.Saga.UpdatedAt = DateTime.Now;
-                
+
                 var @event = new OrderResponseEvent
                 {
                     CorrelationId = context.Saga.CorrelationId,
                     CustomerId = context.Saga.CustomerId,
                     CustomerType = context.Saga.CustomerType,
                     TaxesCalculation = context.Message,
-                    FinishedAt = DateTime.Now
+                    FinishedAt = DateTime.Now,
                 };
 
                 return context.Init<OrderResponseEvent>(@event);
@@ -61,7 +63,28 @@ namespace OrdersOrchestrator.StateMachines
             
             return @event;
         }
-        
+
+        public static EventActivityBinder<OrderRequestState, DeadLetterMessage> ProcessRetry(
+           this EventActivityBinder<OrderRequestState, DeadLetterMessage> binder)
+        {
+            var @event = binder.Produce(context =>
+            {
+                context.Saga.UpdatedAt = DateTime.Now;
+
+                var @event = new
+                {
+                    CorrelationId = context.Saga.CorrelationId,
+                    CustomerId = context.Saga.CustomerId,
+                    ItemId = context.Saga.ItemId,
+                    __Header_Registration_RetryAttempt = context.Saga.RetryAttempt++
+                };
+
+                return context.Init<OrderRequestEvent>(@event);
+            });
+
+            return @event;
+        }
+
         public static EventActivityBinder<TSaga, TData> LogSaga<TSaga, TData>(this EventActivityBinder<TSaga, TData> binder)
             where TSaga : class, ISaga
             where TData : class

@@ -8,11 +8,12 @@ public sealed class OrderRequestState : SagaStateMachineInstance, ISagaVersion
     public string? ItemId { get; set; }
     public string? CustomerId { get; set; }
     public string? CustomerType { get; set; }
-    
     public DateTime CreatedAt { get; set; }
-    
     public DateTime UpdatedAt { get; set; }
-    
+    public int RetryAttempt { get; set; }
+    public Guid? ScheduleRetryToken { get; set; }
+
+
     // Default props
     public Guid CorrelationId { get; set; }
     

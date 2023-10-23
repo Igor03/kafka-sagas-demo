@@ -31,6 +31,7 @@ namespace TaxexCalculationEngine.Consumers
             var response = new TaxesCalculationResponse
             {
                 CorrelationId = context.Message.CorrelationId,
+                ItemId = context.Message.ItemId!,
                 TaxAAA = (decimal)rnd.NextInt64(0, calculationFactor) / 10,
                 TaxBBB = (decimal)rnd.NextInt64(0, calculationFactor) / 10,
                 TaxCCC = (decimal)rnd.NextInt64(0, calculationFactor) / 10,
