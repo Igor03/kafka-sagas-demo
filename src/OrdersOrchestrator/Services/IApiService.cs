@@ -4,6 +4,6 @@ namespace OrdersOrchestrator.Services
 {
     public interface IApiService
     {
-        Task<ApiServiceResponse> ValidateRequestAsync(string ItemId);
+        Task<ApiServiceResponse> SomeApiCallAsync();
     }
 }

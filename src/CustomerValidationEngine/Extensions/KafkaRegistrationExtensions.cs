@@ -1,8 +1,8 @@
 ﻿using Confluent.Kafka;
 using CustomerValidationEngine.Configuration;
+using CustomerValidationEngine.Consumers;
 using CustomerValidationEngine.Contracts;
 using MassTransit;
-using TaxexCalculationEngine.Consumers;
 
 namespace TaxesCalculationEngine.Extensions
 {

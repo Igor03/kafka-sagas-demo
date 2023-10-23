@@ -3,7 +3,6 @@
     public sealed class CustomerValidationResponseEvent
     {
         public Guid CorrelationId { get; set; }
-
-        public string AdjudtedCustomerId { get; set; }
+        public string CustomerType { get; set; } = string.Empty;
     }
 }

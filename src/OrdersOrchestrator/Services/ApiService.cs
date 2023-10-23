@@ -4,13 +4,13 @@ namespace OrdersOrchestrator.Services
 {
     public sealed class ApiService : IApiService
     {
-        public Task<ApiServiceResponse> ValidateRequestAsync(string ItemId)
+        public Task<ApiServiceResponse> SomeApiCallAsync()
         {
-            return Task.FromResult(new ApiServiceResponse
-            {
-                AdjustedName = $"validated-{ItemId}",
-                Valid = true,
-            });
+            return Task.FromResult(
+                new ApiServiceResponse
+                {
+                    SomeResponseValue = "Some data",
+                });
         }
     }
 }

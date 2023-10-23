@@ -2,8 +2,6 @@
 {
     public class ApiServiceResponse
     {
-        public string AdjustedName { get; set; }
-
-        public bool Valid { get; set; }
+        public string SomeResponseValue { get; set; }
     }
 }

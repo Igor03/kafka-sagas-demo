@@ -1,5 +1,4 @@
 using MassTransit;
-using MongoDB.Bson;
 using OrdersOrchestrator.Contracts.CustomerValidationEngine;
 using OrdersOrchestrator.Contracts.OrderManagement;
 using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
@@ -11,75 +10,50 @@ public class OrderRequestStateMachine : MassTransitStateMachine<OrderRequestStat
     public OrderRequestStateMachine()
     {
         InstanceState(x => x.CurrentState, Placed);
-
-        Event(() => OrderRequestedEvent, x => x.CorrelateById(context => context.Message.CorrelationId));
-        Event(() => CustomerValidationResponseEvent, x => x.CorrelateById(context => context.Message.CorrelationId));
-        Event(() => TaxesCalculationResponseEvent, x => x.CorrelateById(context => context.Message.CorrelationId));
-
-
+        
+        // Registering and correlating events
+        CorrelateEvents();
+        
         Initially(
             When(OrderRequestedEvent)
-            .Then(x =>
-            {
-                x.Saga.ItemId = x.Message.ItemId;
-
-                Console.WriteLine("Receiving order request");
-                Console.WriteLine(x.Saga.ToJson());
-            })
-             .TransitionTo(ValidatingCustomer));
-
-
+                .Then(_ => LogContext.Info?.Log("Receiving order request"))
+                .InitializeSaga()
+                .LogSaga()
+                .TransitionTo(ValidatingCustomer));
+        
         During(ValidatingCustomer,
           When(CustomerValidationResponseEvent)
-              .Produce(context =>
-              {
-                  context.Saga.CustomerId = context.Message.AdjudtedCustomerId;
-
-                  Console.WriteLine("Validating Customer");
-                  Console.WriteLine(context.Saga.ToJson());
-
-                  var @event = new TaxesCalculationRequestEvent
-                  {
-                      CorrelationId = context.Saga.CorrelationId,
-                      ItemId = context.Saga.ItemId
-                  };
-
-                  return context.Init<TaxesCalculationRequestEvent>(@event);
-              })
+              .Then(_ => LogContext.Info?.Log("Validating customer"))
+              .SendToTaxesCalculation()
+              .LogSaga()
               .TransitionTo(CalculatingTaxes));
 
         During(CalculatingTaxes,
             When(TaxesCalculationResponseEvent)
-                .Produce(context =>
-                {
-                    Console.WriteLine("Calculating taxes");
-                    Console.WriteLine(context.Saga.ToJson());
-
-                    var @event = new OrderResponseEvent
-                    {
-                        CorrelationId = context.Saga.CorrelationId,
-                        TaxesCalculation = context.Message,
-                        FinishedAt = DateTime.Now
-                    };
-
-                    return context.Init<OrderResponseEvent>(@event);
-                })
+                .Then(_ => LogContext.Info?.Log("Calculating taxes"))
+                .ReplyToRequestingSystem()
+                .LogSaga()
                 .TransitionTo(FinishedOrder));
-
+        
+        WhenEnter(FinishedOrder, x => x.Then(_ => LogContext.Info?.Log("Finished")));
+        WhenEnter(Initial, x => x.Then(_ => LogContext.Debug?.Log("Received order>>>>>>")));
+        
+        // Marking as completed for the SM instance to be removed from the repository
        SetCompletedWhenFinalized();
     }
 
-    public State? Placed { get; }
+    private void CorrelateEvents()
+    {
+        Event(() => OrderRequestedEvent, x => x.CorrelateById(context => context.Message.CorrelationId));
+        Event(() => CustomerValidationResponseEvent, x => x.CorrelateById(context => context.Message.CorrelationId));
+        Event(() => TaxesCalculationResponseEvent, x => x.CorrelateById(context => context.Message.CorrelationId));
+    }
 
-    public State? ValidatingCustomer { get; }
-
-    public State? CalculatingTaxes { get; }
-    
+    public State? Placed { get; set; }
+    public State? ValidatingCustomer { get; set; }
+    public State? CalculatingTaxes { get; set; }
     public State? FinishedOrder { get; set; }
-    
-    public Event<OrderRequestEvent>? OrderRequestedEvent { get; }
-
-    public Event<CustomerValidationResponseEvent>? CustomerValidationResponseEvent { get; }
-    
-    public Event<TaxesCalculationResponseEvent>? TaxesCalculationResponseEvent { get; }
+    public Event<OrderRequestEvent>? OrderRequestedEvent { get; set; }
+    public Event<CustomerValidationResponseEvent>? CustomerValidationResponseEvent { get; set; }
+    public Event<TaxesCalculationResponseEvent>? TaxesCalculationResponseEvent { get; set; }
 }

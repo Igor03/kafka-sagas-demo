@@ -1,4 +1,5 @@
 ﻿using MassTransit;
+using MassTransit.SagaStateMachine;
 using TaxesCalculationEngine.Contracts;
 
 namespace TaxexCalculationEngine.Consumers
@@ -16,17 +17,25 @@ namespace TaxexCalculationEngine.Consumers
         {
             ArgumentNullException.ThrowIfNull(context, nameof(context));
 
+            var customerType = context.Message.CustomerType!;
+            
+            var calculationFactor = customerType switch
+            {
+                "Regular" => 100,
+                "Premium" => 50,
+                "Super Premium" => 20,
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            
             var rnd = new Random();
             var response = new TaxesCalculationResponse
             {
-                ItemId = context.Message.ItemId,
-                TaxAAA = (decimal)rnd.NextInt64(0, 100) / 10,
-                TaxBBB = (decimal)rnd.NextInt64(0, 100) / 10,
-                TaxCCC = (decimal)rnd.NextInt64(0, 100) / 10,
+                CorrelationId = context.Message.CorrelationId,
+                TaxAAA = (decimal)rnd.NextInt64(0, calculationFactor) / 10,
+                TaxBBB = (decimal)rnd.NextInt64(0, calculationFactor) / 10,
+                TaxCCC = (decimal)rnd.NextInt64(0, calculationFactor) / 10,
             };
 
-            response.CorrelationId = context.Message.CorrelationId;
-            
             // Sending the calculated taxes based on the ItemId
             await taxesCalculationProducer
                 .Produce(context.GetKey<string>(), response)
