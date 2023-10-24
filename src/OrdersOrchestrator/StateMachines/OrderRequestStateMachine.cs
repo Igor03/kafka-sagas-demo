@@ -26,13 +26,13 @@ public class OrderRequestStateMachine : MassTransitStateMachine<OrderRequestStat
                 {
                     LogContext.Info?.Log(p.Saga.CurrentState.ToString());
                 }))
-                .SendingToCustomerValidation()
-                .TransitionTo(Faulted));
+                .TransitionTo(ValidatingCustomer));
         
         During(ValidatingCustomer,
             When(CustomerValidationResponseEvent)
               .Then(context => LogContext.Info?.Log("Calculating Taxes: {0}", context.Saga.CorrelationId))
               .Activity(x => x.OfType<CustomerValidationStepActivity>())
+              .SendToTaxesCalculation()
               .LogSaga()
               .TransitionTo(CalculatingTaxes));
 

@@ -1,4 +1,6 @@
-﻿using MassTransit;
+﻿using Confluent.Kafka;
+using MassTransit;
+using OrdersOrchestrator.Contracts.CustomerValidationEngine;
 using OrdersOrchestrator.Contracts.OrderManagement;
 using OrdersOrchestrator.Services;
 using OrdersOrchestrator.StateMachines;
@@ -8,15 +10,14 @@ namespace OrdersOrchestrator.Activities
     public class ReceiveOrderRequestStepActivity : IStateMachineActivity<OrderRequestState, OrderRequestEvent>
     {
         private readonly IApiService apiService;
+        private readonly ITopicProducer<CustomerValidationRequestEvent> customerValidationEngineProducer;
 
-        public ReceiveOrderRequestStepActivity(IApiService apiService)
+        public ReceiveOrderRequestStepActivity(
+            IApiService apiService, 
+            ITopicProducer<CustomerValidationRequestEvent> customerValidationEngineProducer)
         {
             this.apiService = apiService;
-        }
-
-        public void Accept(StateMachineVisitor visitor)
-        {
-            visitor.Visit(this);
+            this.customerValidationEngineProducer = customerValidationEngineProducer;
         }
 
         public async Task Execute(
@@ -27,6 +28,15 @@ namespace OrdersOrchestrator.Activities
                 .ValidateIncomingRequestAsync(context.Message)
                 .ConfigureAwait(false))
                     throw new Exception("Something wrong just happened here");
+
+            var customerValidationEvent = new
+            {
+                context.Message.CorrelationId,
+                context.Message.CustomerId,
+            };
+
+            await customerValidationEngineProducer
+                .Produce(customerValidationEvent);
 
             await next.Execute(context).ConfigureAwait(false);
         }
@@ -40,9 +50,8 @@ namespace OrdersOrchestrator.Activities
                 .ConfigureAwait(false);
         }
 
-        public void Probe(ProbeContext context)
-        {
-            context.CreateScope("order-placed");
-        }
+        public void Probe(ProbeContext context) => context.CreateScope("order-placed");
+        public void Accept(StateMachineVisitor visitor) => visitor.Visit(this);
+        
     }
 }
