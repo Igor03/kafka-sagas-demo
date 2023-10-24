@@ -14,23 +14,9 @@ namespace OrdersOrchestrator.Consumers
             DeadLetterProducer = deadLetterProducer;
         }
 
-        public async Task Consume(ConsumeContext<CustomerValidationResponseEvent> context)
+        public Task Consume(ConsumeContext<CustomerValidationResponseEvent> context)
         {
-            try
-            {
-                throw new ArgumentException(nameof(context.Message.CustomerType));
-            }
-            catch
-            {
-                var message = new DeadLetterMessage
-                {
-                    CorrelationId = context.Message.CorrelationId,
-                    Message = context.Message
-                };
-
-                await DeadLetterProducer.Produce(message);
-            }
-           
+            return Task.CompletedTask;
         }
     }
 }

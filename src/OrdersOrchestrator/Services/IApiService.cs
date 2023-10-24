@@ -1,4 +1,5 @@
 ﻿using OrdersOrchestrator.Contracts.ApiService;
+using OrdersOrchestrator.Contracts.OrderManagement;
 
 namespace OrdersOrchestrator.Services
 {
@@ -6,6 +7,6 @@ namespace OrdersOrchestrator.Services
     {
         Task<ApiServiceResponse> SomeApiCallAsync();
 
-        Task<bool> ValidateIncomingRequestAsync();
+        Task<bool> ValidateIncomingRequestAsync(OrderRequestEvent @event);
     }
 }

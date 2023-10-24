@@ -22,19 +22,8 @@ namespace OrdersOrchestrator.Consumers
         {
             ArgumentNullException.ThrowIfNull(context, nameof(context));
 
-            // calling some external service before producing data and go to the next step of out state machine
-            await apiService
-                .SomeApiCallAsync()
-                .ConfigureAwait(false);
-            
-            var customerValidationRequest = new CustomerValidationRequestEvent
-            {
-                CorrelationId = context.Message.CorrelationId,
-                CustomerId = context.Message.CustomerId,
-            };
-            
-            await customerValidationResponseEvent
-                .Produce(customerValidationRequest);
+            if (await this.apiService.ValidateIncomingRequestAsync(context.Message))
+                throw new ArgumentException("Something wrong just happened");
         }
     }
 }

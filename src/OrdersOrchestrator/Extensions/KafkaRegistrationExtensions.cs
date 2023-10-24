@@ -6,6 +6,7 @@ using OrdersOrchestrator.Contracts;
 using OrdersOrchestrator.Contracts.CustomerValidationEngine;
 using OrdersOrchestrator.Contracts.OrderManagement;
 using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
+using OrdersOrchestrator.Middlewares;
 using OrdersOrchestrator.StateMachines;
 
 namespace OrdersOrchestrator.Extensions;
@@ -55,18 +56,19 @@ public static class KafkaRegistrationExtensions
                        groupId: kafkaTopics.DefaultGroup,
                        configure: topicConfig =>
                        {
+                           topicConfig.UseConsumeFilter(typeof(LoggingMiddlewareFilter<>), riderContext);
+
                            topicConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
-                           topicConfig.ConfigureConsumer<OrderManagementSystemConsumer>(riderContext);
+                           // topicConfig.ConfigureConsumer<OrderManagementSystemConsumer>(riderContext);
                            topicConfig.DiscardSkippedMessages();
                            topicConfig.ConfigureSaga<OrderRequestState>(riderContext);
+                           topicConfig.UseInMemoryOutbox(riderContext);
                            
                            //topicConfig.UseMessageRetry(x =>
                            //{
                            //    x.Handle<ArgumentException>();
                            //    x.Interval(5, TimeSpan.FromSeconds(1));
                            //});
-                           
-                           // topicConfig.UseConsumeFilter(typeof(TelemetryInterceptorMiddlewareFilter<>), riderContext);  
                        });
 
                     kafkaConfig.TopicEndpoint<string, TaxesCalculationResponseEvent>(
@@ -75,10 +77,11 @@ public static class KafkaRegistrationExtensions
                        configure: topicConfig =>
                        {
                            topicConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
-                           topicConfig.ConfigureConsumer<TaxesCalculationEngineConsumer>(riderContext);
+                           // topicConfig.ConfigureConsumer<TaxesCalculationEngineConsumer>(riderContext);
                            topicConfig.DiscardSkippedMessages();
                            topicConfig.ConfigureSaga<OrderRequestState>(riderContext);
-                           
+                           topicConfig.UseInMemoryOutbox(riderContext);
+
                            //topicConfig.UseMessageRetry(x =>
                            //{
                            //    x.Handle<ArgumentException>();
@@ -94,10 +97,11 @@ public static class KafkaRegistrationExtensions
                        configure: topicConfig =>
                        {
                            topicConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
-                           topicConfig.ConfigureConsumer<CustomerValidationEngineConsumer>(riderContext);
+                           // topicConfig.ConfigureConsumer<CustomerValidationEngineConsumer>(riderContext);
                            topicConfig.DiscardSkippedMessages();
                            topicConfig.ConfigureSaga<OrderRequestState>(riderContext);
-                           
+                           topicConfig.UseInMemoryOutbox(riderContext);
+
                            //topicConfig.UseMessageRetry(x =>
                            //{
                            //    x.Handle<ArgumentException>();
@@ -113,7 +117,7 @@ public static class KafkaRegistrationExtensions
                       configure: topicConfig =>
                       {
                           topicConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
-                          topicConfig.ConfigureConsumer<DeadLetterConsumer>(riderContext);
+                          // topicConfig.ConfigureConsumer<DeadLetterConsumer>(riderContext);
                           topicConfig.DiscardSkippedMessages();
                           topicConfig.ConfigureSaga<OrderRequestState>(riderContext);
                       });

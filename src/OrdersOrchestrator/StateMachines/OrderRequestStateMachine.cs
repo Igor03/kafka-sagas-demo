@@ -1,4 +1,5 @@
 using MassTransit;
+using OrdersOrchestrator.Activities;
 using OrdersOrchestrator.Configuration;
 using OrdersOrchestrator.Contracts;
 using OrdersOrchestrator.Contracts.CustomerValidationEngine;
@@ -15,38 +16,42 @@ public class OrderRequestStateMachine : MassTransitStateMachine<OrderRequestStat
         
         // Registering and correlating events
         CorrelateEvents();
-        // ConfigureRetry();
 
         Initially(
             When(OrderRequestedEvent)
-                .Then(context => LogContext.Info?.Log("Receiving order request: {0}", context.Saga.CorrelationId))
                 .InitializeSaga()
-                .LogSaga()
-                .TransitionTo(ValidatingCustomer));
+                .Then(context => LogContext.Info?.Log("Validating Customer: {0}", context.Saga.CorrelationId))
+                .Activity(x => x.OfType<ReceiveOrderRequestStepActivity>())
+                .Catch<Exception>(x => x.Then(p =>
+                {
+                    LogContext.Info?.Log(p.Saga.CurrentState.ToString());
+                }))
+                .SendingToCustomerValidation()
+                .TransitionTo(Faulted));
         
         During(ValidatingCustomer,
             When(CustomerValidationResponseEvent)
-              .Then(context => LogContext.Info?.Log("Validating customer: {0}", context.Saga.CorrelationId))
-              .SendToTaxesCalculation()
+              .Then(context => LogContext.Info?.Log("Calculating Taxes: {0}", context.Saga.CorrelationId))
+              .Activity(x => x.OfType<CustomerValidationStepActivity>())
               .LogSaga()
               .TransitionTo(CalculatingTaxes));
 
         During(CalculatingTaxes,
             When(TaxesCalculationResponseEvent)
-                .Then(context => LogContext.Info?.Log("Calculating taxes: {0}", context.Saga.CorrelationId))
-                .ReplyToRequestingSystem()
-                .LogSaga()
-                .TransitionTo(FinishedOrder),
-             When(DeadLetterRetryEvent)
-                .ProcessRetry()
-                .TransitionTo(Faulted));
-
+                .Then(context => LogContext.Info?.Log("Replying to Source System", context.Saga.CorrelationId))
+                .ReplyToRequestingSystem().LogSaga()
+                .TransitionTo(FinishedOrder));
 
         During(Faulted,
-            When(OrderRequestedEvent)
+            When(CustomerValidationResponseEvent)
+            .Then(x =>
+            {
+                LogContext.Info?.Log("Testintg");
+            })
+            .Activity(x => x.OfType<CustomerValidationStepActivity>())
             .TransitionTo(ValidatingCustomer));
         
-        WhenEnter(FinishedOrder, x => x.Then(context => LogContext.Info?.Log("Order replyied taxes: {0}", context.Saga.CorrelationId)));
+        WhenEnter(FinishedOrder, x => x.Then(context => LogContext.Info?.Log("Order replyied: {0}", context.Saga.CorrelationId)));
 
         var retryCount = configuration
             .GetSection("KafkaOptions:Topics")
@@ -68,9 +73,21 @@ public class OrderRequestStateMachine : MassTransitStateMachine<OrderRequestStat
 
     private void CorrelateEvents()
     {
-        Event(() => OrderRequestedEvent, x => x.CorrelateById(context => context.Message.CorrelationId));
-        Event(() => CustomerValidationResponseEvent, x => x.CorrelateById(context => context.Message.CorrelationId));
-        Event(() => TaxesCalculationResponseEvent, x => x.CorrelateById(context => context.Message.CorrelationId));
+        Event(() => OrderRequestedEvent, configurator => 
+        {
+            configurator.CorrelateById(context => context.Message.CorrelationId);
+            configurator.OnMissingInstance(m => m.Discard());
+        });
+        Event(() => CustomerValidationResponseEvent, configurator =>
+        {
+            configurator.CorrelateById(context => context.Message.CorrelationId);
+            configurator.OnMissingInstance(m => m.Discard());
+        });
+        Event(() => TaxesCalculationResponseEvent, configurator =>
+        {
+            configurator.CorrelateById(context => context.Message.CorrelationId);
+            configurator.OnMissingInstance(m => m.Discard());
+        });
         // Event(() => DeadLetterRetryEvent, x => x.CorrelateById(context => context.Message.CorrelationId));
     }
 

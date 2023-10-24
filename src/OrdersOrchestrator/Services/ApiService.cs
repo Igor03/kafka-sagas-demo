@@ -1,4 +1,5 @@
 ﻿using OrdersOrchestrator.Contracts.ApiService;
+using OrdersOrchestrator.Contracts.OrderManagement;
 
 namespace OrdersOrchestrator.Services
 {
@@ -13,9 +14,10 @@ namespace OrdersOrchestrator.Services
                 });
         }
 
-        public Task<bool> ValidateIncomingRequestAsync()
+        public Task<bool> ValidateIncomingRequestAsync(OrderRequestEvent @event)
         {
-            throw new NotImplementedException();
+            return Task.FromResult(@event.ItemId.ToUpper() == "ERROR" || @event.CustomerId.ToUpper() == "ERROR");
+                
         }
     }
 }

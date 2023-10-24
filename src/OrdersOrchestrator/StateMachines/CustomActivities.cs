@@ -20,7 +20,23 @@ namespace OrdersOrchestrator.StateMachines
                 context.Saga.CustomerId = context.Message.CustomerId;
             });
         }
-        
+
+        public static EventActivityBinder<OrderRequestState, OrderRequestEvent> SendingToCustomerValidation(
+           this EventActivityBinder<OrderRequestState, OrderRequestEvent> binder)
+        {
+            var @event = binder.Produce(context =>
+            {
+                var @event = new
+                {
+                    context.Saga.CorrelationId,
+                    ItemId = context.Saga.CustomerId!,
+
+                };
+                return context.Init<CustomerValidationRequestEvent>(@event);
+            });
+            return @event;
+        }
+
         public static EventActivityBinder<OrderRequestState, CustomerValidationResponseEvent> SendToTaxesCalculation(
             this EventActivityBinder<OrderRequestState, CustomerValidationResponseEvent> binder)
         {
