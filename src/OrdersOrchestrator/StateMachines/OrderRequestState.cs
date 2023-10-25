@@ -11,6 +11,7 @@ public sealed class OrderRequestState : SagaStateMachineInstance, ISagaVersion
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public int RetryAttempt { get; set; }
+    public string? Reason { get; set; }
     public Guid? ScheduleRetryToken { get; set; }
 
 

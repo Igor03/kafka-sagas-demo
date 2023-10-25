@@ -5,6 +5,8 @@ using OrdersOrchestrator.Contracts.OrderManagement;
 using OrdersOrchestrator.Services;
 using OrdersOrchestrator.StateMachines;
 
+using OrdersOrchestrator.StateMachines;
+
 namespace OrdersOrchestrator.Activities
 {
     public class ReceiveOrderRequestStepActivity : IStateMachineActivity<OrderRequestState, OrderRequestEvent>
@@ -27,8 +29,10 @@ namespace OrdersOrchestrator.Activities
             if (await apiService
                 .ValidateIncomingRequestAsync(context.Message)
                 .ConfigureAwait(false))
-                    throw new Exception("Something wrong just happened here");
-
+            {
+                throw new Exception(context.Saga.Reason);
+            }
+                    
             var customerValidationEvent = new
             {
                 context.Message.CorrelationId,
@@ -46,9 +50,11 @@ namespace OrdersOrchestrator.Activities
             IBehavior<OrderRequestState, OrderRequestEvent> next) 
             where TException : Exception
         {
-            await next.Execute(context)
-                .ConfigureAwait(false);
+            _ = context.Exception;
+
+            await next.Execute(context).ConfigureAwait(false);
         }
+        
 
         public void Probe(ProbeContext context) => context.CreateScope("order-placed");
         public void Accept(StateMachineVisitor visitor) => visitor.Visit(this);

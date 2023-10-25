@@ -1,10 +1,12 @@
 ﻿using MassTransit;
+using MassTransit.KafkaIntegration.Activities;
 using MassTransit.SagaStateMachine;
 using Newtonsoft.Json;
 using OrdersOrchestrator.Contracts;
 using OrdersOrchestrator.Contracts.CustomerValidationEngine;
 using OrdersOrchestrator.Contracts.OrderManagement;
 using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
+using static MassTransit.Logging.OperationName;
 
 namespace OrdersOrchestrator.StateMachines
 {

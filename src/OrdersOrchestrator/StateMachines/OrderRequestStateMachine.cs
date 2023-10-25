@@ -1,6 +1,5 @@
 using MassTransit;
 using OrdersOrchestrator.Activities;
-using OrdersOrchestrator.Configuration;
 using OrdersOrchestrator.Contracts;
 using OrdersOrchestrator.Contracts.CustomerValidationEngine;
 using OrdersOrchestrator.Contracts.OrderManagement;
@@ -12,7 +11,13 @@ public class OrderRequestStateMachine : MassTransitStateMachine<OrderRequestStat
 {
     public OrderRequestStateMachine(IConfiguration configuration)
     {
-        InstanceState(x => x.CurrentState, Placed);
+        InstanceState(x => x.CurrentState, 
+            Placed, 
+            ValidatingCustomer, 
+            CalculatingTaxes, 
+            FinishedOrder, 
+            Faulted, 
+            WaitingToRetry);
         
         // Registering and correlating events
         CorrelateEvents();
@@ -22,52 +27,39 @@ public class OrderRequestStateMachine : MassTransitStateMachine<OrderRequestStat
                 .InitializeSaga()
                 .Then(context => LogContext.Info?.Log("Validating Customer: {0}", context.Saga.CorrelationId))
                 .Activity(x => x.OfType<ReceiveOrderRequestStepActivity>())
-                .Catch<Exception>(x => x.Then(p =>
-                {
-                    LogContext.Info?.Log(p.Saga.CurrentState.ToString());
-                }))
+                .Catch<Exception>(p => p.Activity(x => x.OfType<ExceptionCompensationStepActivity<OrderRequestEvent>>()))
                 .TransitionTo(ValidatingCustomer));
-        
+
         During(ValidatingCustomer,
             When(CustomerValidationResponseEvent)
               .Then(context => LogContext.Info?.Log("Calculating Taxes: {0}", context.Saga.CorrelationId))
               .Activity(x => x.OfType<CustomerValidationStepActivity>())
-              .SendToTaxesCalculation()
-              .LogSaga()
               .TransitionTo(CalculatingTaxes));
 
         During(CalculatingTaxes,
             When(TaxesCalculationResponseEvent)
-                .Then(context => LogContext.Info?.Log("Replying to Source System", context.Saga.CorrelationId))
-                .ReplyToRequestingSystem().LogSaga()
+                .Then(context => LogContext.Info?.Log("Replying to Source System {0}", context.Saga.CorrelationId))
+                .Activity(x => x.OfType<TaxesCalculationStepActivity>())
                 .TransitionTo(FinishedOrder));
 
+
         During(Faulted,
-            When(CustomerValidationResponseEvent)
-            .Then(x =>
-            {
-                LogContext.Info?.Log("Testintg");
-            })
-            .Activity(x => x.OfType<CustomerValidationStepActivity>())
-            .TransitionTo(ValidatingCustomer));
+           When(OrderRequestedEvent)
+               .Then(_ => LogContext.Info?.Log("Compensating for 1"))
+               .TransitionTo(WaitingToRetry),
+           When(CustomerValidationResponseEvent)
+               .Then(_ => LogContext.Info?.Log("Compensating for 2"))
+               .TransitionTo(WaitingToRetry),
+           When(TaxesCalculationResponseEvent)
+               .Then(_ => LogContext.Info?.Log("Compensating for 3"))
+               .TransitionTo(WaitingToRetry));
+            
         
-        WhenEnter(FinishedOrder, x => x.Then(context => LogContext.Info?.Log("Order replyied: {0}", context.Saga.CorrelationId)));
+        WhenEnter(FinishedOrder, x => x.Then(
+            context => LogContext.Info?.Log("Order replyied: {0}", 
+            context.Saga.CorrelationId))
+        );
 
-        var retryCount = configuration
-            .GetSection("KafkaOptions:Topics")
-            .GetValue<short>("MaxRetriesAttemps");
-        
-        var retryDelay = TimeSpan.FromSeconds(10);
-
-        //WhenEnter(Faulted, x => x
-        //    .If(context => context.Saga.RetryAttempt < retryCount,
-        //        retry => retry
-        //            .Schedule(RetryDelayExpired, context => new RetryDelayExpired(context.Saga.CorrelationId), _ => retryDelay)
-        //            .TransitionTo(WaitingToRetry)
-        //    )
-        //);
-
-        // Marking as completed for the SM instance to be removed from the repository
         SetCompletedWhenFinalized();
     }
 
@@ -87,19 +79,6 @@ public class OrderRequestStateMachine : MassTransitStateMachine<OrderRequestStat
         {
             configurator.CorrelateById(context => context.Message.CorrelationId);
             configurator.OnMissingInstance(m => m.Discard());
-        });
-        // Event(() => DeadLetterRetryEvent, x => x.CorrelateById(context => context.Message.CorrelationId));
-    }
-
-    private void ConfigureRetry()
-    {
-        Schedule(() => RetryDelayExpired, saga => saga.ScheduleRetryToken, x =>
-        {
-            x.Received = r =>
-            {
-                r.CorrelateById(context => context.Message.CorrelationId);
-                r.ConfigureConsumeTopology = false;
-            };
         });
     }
 
