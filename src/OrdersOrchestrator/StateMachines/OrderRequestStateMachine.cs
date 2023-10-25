@@ -27,7 +27,7 @@ public class OrderRequestStateMachine : MassTransitStateMachine<OrderRequestStat
                 .InitializeSaga()
                 .Then(context => LogContext.Info?.Log("Validating Customer: {0}", context.Saga.CorrelationId))
                 .Activity(x => x.OfType<ReceiveOrderRequestStepActivity>())
-                .Catch<Exception>(p => p.Activity(x => x.OfType<ExceptionCompensationStepActivity<OrderRequestEvent>>()))
+                .Catch<Exception>(p => p.Activity(x => x.OfType<ReceiveOrderRequestStepActivity>()))
                 .TransitionTo(ValidatingCustomer));
 
         During(ValidatingCustomer,
