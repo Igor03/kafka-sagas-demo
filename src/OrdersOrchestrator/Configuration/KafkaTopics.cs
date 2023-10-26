@@ -10,5 +10,5 @@ public record KafkaTopics
     public string CustomerValidationEngineResponse { get; set; } = string.Empty;
     public string Deadletter { get; set; } = string.Empty;
     public string DefaultGroup { get; set; } = "orders_orchestrator.group";
-    public short MaxRetriesAttemps;
+    public short MaxRetriesAttempts { get; set; }
 }

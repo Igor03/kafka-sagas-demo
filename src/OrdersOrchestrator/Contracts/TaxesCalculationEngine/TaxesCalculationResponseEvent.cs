@@ -4,7 +4,7 @@ public sealed class TaxesCalculationResponseEvent
 {
     public Guid CorrelationId { get; set; }
     
-    public string ItemId { get; set; }
+    public string? ItemId { get; set; }
     
     public decimal TaxAAA { get; set; }
     

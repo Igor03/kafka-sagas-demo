@@ -3,17 +3,14 @@ using MassTransit.KafkaIntegration.Activities;
 using MassTransit.SagaStateMachine;
 using Newtonsoft.Json;
 using OrdersOrchestrator.Contracts;
-using OrdersOrchestrator.Contracts.CustomerValidationEngine;
 using OrdersOrchestrator.Contracts.OrderManagement;
-using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
-using static MassTransit.Logging.OperationName;
 
 namespace OrdersOrchestrator.StateMachines
 {
     public static class CustomActivities
     {
-        public static EventActivityBinder<OrderRequestState, OrderRequestEvent> InitializeSaga(
-            this EventActivityBinder<OrderRequestState, OrderRequestEvent> binder)
+        public static EventActivityBinder<OrderRequestSagaInstance, OrderRequestEvent> InitializeSaga(
+            this EventActivityBinder<OrderRequestSagaInstance, OrderRequestEvent> binder)
         {
             return binder.Then(context =>
             {
@@ -23,67 +20,8 @@ namespace OrdersOrchestrator.StateMachines
             });
         }
 
-        public static EventActivityBinder<OrderRequestState, OrderRequestEvent> SendingToCustomerValidation(
-           this EventActivityBinder<OrderRequestState, OrderRequestEvent> binder)
-        {
-            var @event = binder.Produce(context =>
-            {
-                var @event = new
-                {
-                    context.Saga.CorrelationId,
-                    ItemId = context.Saga.CustomerId!,
-
-                };
-                return context.Init<CustomerValidationRequestEvent>(@event);
-            });
-            return @event;
-        }
-
-        public static EventActivityBinder<OrderRequestState, CustomerValidationResponseEvent> SendToTaxesCalculation(
-            this EventActivityBinder<OrderRequestState, CustomerValidationResponseEvent> binder)
-        {
-            var @event = binder.Produce(context =>
-            {
-                // Updating Saga
-                context.Saga.CustomerType = context.Message.CustomerType;
-                context.Saga.UpdatedAt = DateTime.Now;
-                
-                var @event = new
-                {
-                    context.Message.CustomerType,
-                    context.Saga.CorrelationId,
-                    ItemId = context.Saga.ItemId!,
-
-                };
-                return context.Init<TaxesCalculationRequestEvent>(@event);
-            });
-            return @event;
-        }
-        
-        public static EventActivityBinder<OrderRequestState, TaxesCalculationResponseEvent> ReplyToRequestingSystem(
-            this EventActivityBinder<OrderRequestState, TaxesCalculationResponseEvent> binder)
-        {
-            var @event = binder.Produce(context =>
-            {
-                context.Saga.UpdatedAt = DateTime.Now;
-
-                var @event = new OrderResponseEvent
-                {
-                    CorrelationId = context.Saga.CorrelationId,
-                    CustomerId = context.Saga.CustomerId,
-                    CustomerType = context.Saga.CustomerType,
-                    TaxesCalculation = context.Message,
-                    FinishedAt = DateTime.Now,
-                };
-
-                return context.Init<OrderResponseEvent>(@event);
-            });
-            
-            return @event;
-        }
-
-        public static EventActivityBinder<OrderRequestState, DeadLetterMessage> ProcessRetry(
-           this EventActivityBinder<OrderRequestState, DeadLetterMessage> binder)
+        public static EventActivityBinder<OrderRequestSagaInstance, ErrorMessageEvent> ProcessRetry(
+           this EventActivityBinder<OrderRequestSagaInstance, ErrorMessageEvent> binder)
         {
             var @event = binder.Produce(context =>
             {
@@ -94,13 +32,50 @@ namespace OrdersOrchestrator.StateMachines
                     CorrelationId = context.Saga.CorrelationId,
                     CustomerId = context.Saga.CustomerId,
                     ItemId = context.Saga.ItemId,
-                    __Header_Registration_RetryAttempt = context.Saga.RetryAttempt++
+                    __Header_Registration_RetryAttempt = 2,
                 };
 
                 return context.Init<OrderRequestEvent>(@event);
             });
 
             return @event;
+        }
+
+        public static ExceptionActivityBinder<TInstance, TData, TException> SendToErrorTopic<TInstance, TData, TException, TMessage>(
+             this ExceptionActivityBinder<TInstance, TData, TException> source,
+             Action<SendContext<TMessage>> contextCallback = null)
+             where TInstance : class, SagaStateMachineInstance
+             where TData : class
+             where TMessage : class
+             where TException : Exception
+        {
+            Func<BehaviorExceptionContext<TInstance, TData, TException>, Task<SendTuple<TMessage>>> messageFactory = context =>
+            {
+                var @event = new
+                {
+                    context.Saga.CorrelationId,
+                    context.Message,
+                    __Header_Reason = context.Exception.Message,
+                };
+
+                return context.Init<TMessage>(@event);
+            };
+
+            return source.Add(new FaultedProduceActivity<TInstance, TData, TException, TMessage>(
+                MessageFactory<TMessage>.Create(messageFactory, contextCallback)));
+        }
+
+        public static ExceptionActivityBinder<TInstance, TData, TException> Vlah<TInstance, TData, TException, TMessage>(
+           this ExceptionActivityBinder<TInstance, TData, TException> source,
+           Func<BehaviorExceptionContext<TInstance, TData, TException>, Task<SendTuple<TMessage>>> messageFactory,
+           Action<SendContext<TMessage>> contextCallback = null)
+           where TInstance : class, SagaStateMachineInstance
+           where TData : class
+           where TMessage : class
+           where TException : Exception
+        {
+            return source.Add(new FaultedProduceActivity<TInstance, TData, TException, TMessage>(
+                MessageFactory<TMessage>.Create(messageFactory, contextCallback)));
         }
 
         public static EventActivityBinder<TSaga, TData> LogSaga<TSaga, TData>(this EventActivityBinder<TSaga, TData> binder)

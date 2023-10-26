@@ -1,12 +1,11 @@
 ﻿using MassTransit;
-using OrdersOrchestrator.Contracts.CustomerValidationEngine;
 using OrdersOrchestrator.Contracts.OrderManagement;
 using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
 using OrdersOrchestrator.StateMachines;
 
 namespace OrdersOrchestrator.Activities
 {
-    public class TaxesCalculationStepActivity : IStateMachineActivity<OrderRequestState, TaxesCalculationResponseEvent>
+    public class TaxesCalculationStepActivity : IStateMachineActivity<OrderRequestSagaInstance, TaxesCalculationResponseEvent>
     {
         private readonly ITopicProducer<OrderResponseEvent> orderResponseEventProducer;
 
@@ -16,10 +15,12 @@ namespace OrdersOrchestrator.Activities
         }
 
         public async Task Execute(
-            BehaviorContext<OrderRequestState, TaxesCalculationResponseEvent> context, 
-            IBehavior<OrderRequestState, TaxesCalculationResponseEvent> next)
+            BehaviorContext<OrderRequestSagaInstance, TaxesCalculationResponseEvent> context, 
+            IBehavior<OrderRequestSagaInstance, TaxesCalculationResponseEvent> next)
         {
-            if (context.Message.ItemId.ToUpper() == "S_ERROR")
+            Thread.Sleep(1500);
+
+            if (context.Message.ItemId!.ToUpper() == "S_ERROR")
             {
                 throw new Exception("Erro no segundo processo");
             }
@@ -39,8 +40,8 @@ namespace OrdersOrchestrator.Activities
         }
 
         public async Task Faulted<TException>(
-            BehaviorExceptionContext<OrderRequestState, TaxesCalculationResponseEvent, TException> context, 
-            IBehavior<OrderRequestState, TaxesCalculationResponseEvent> next) 
+            BehaviorExceptionContext<OrderRequestSagaInstance, TaxesCalculationResponseEvent, TException> context, 
+            IBehavior<OrderRequestSagaInstance, TaxesCalculationResponseEvent> next) 
             where TException : Exception
         {
             await next.Execute(context);

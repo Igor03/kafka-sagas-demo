@@ -5,7 +5,7 @@ using OrdersOrchestrator.StateMachines;
 
 namespace OrdersOrchestrator.Activities
 {
-    public class CustomerValidationStepActivity : IStateMachineActivity<OrderRequestState, CustomerValidationResponseEvent>
+    public class CustomerValidationStepActivity : IStateMachineActivity<OrderRequestSagaInstance, CustomerValidationResponseEvent>
     {
         private readonly ITopicProducer<TaxesCalculationRequestEvent> taxesCalculationEngineProducer;
 
@@ -15,9 +15,11 @@ namespace OrdersOrchestrator.Activities
         }
 
         public async Task Execute(
-            BehaviorContext<OrderRequestState, CustomerValidationResponseEvent> context, 
-            IBehavior<OrderRequestState, CustomerValidationResponseEvent> next)
+            BehaviorContext<OrderRequestSagaInstance, CustomerValidationResponseEvent> context, 
+            IBehavior<OrderRequestSagaInstance, CustomerValidationResponseEvent> next)
         {
+            Thread.Sleep(1500);
+
             var taxesCalculationRequestEvent = new TaxesCalculationRequestEvent
             {
                 CorrelationId = context.Saga.CorrelationId,
@@ -30,8 +32,8 @@ namespace OrdersOrchestrator.Activities
         }
 
         public async Task Faulted<TException>(
-            BehaviorExceptionContext<OrderRequestState, CustomerValidationResponseEvent, TException> context, 
-            IBehavior<OrderRequestState, CustomerValidationResponseEvent> next) 
+            BehaviorExceptionContext<OrderRequestSagaInstance, CustomerValidationResponseEvent, TException> context, 
+            IBehavior<OrderRequestSagaInstance, CustomerValidationResponseEvent> next) 
             where TException : Exception => await next.Execute(context);
 
         public void Probe(ProbeContext context) => context.CreateScope("customer-validation");

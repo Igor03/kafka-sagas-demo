@@ -2,21 +2,18 @@ using MassTransit;
 
 namespace OrdersOrchestrator.StateMachines;
 
-public sealed class OrderRequestState : SagaStateMachineInstance, ISagaVersion
+public sealed class OrderRequestSagaInstance : SagaStateMachineInstance, ISagaVersion
 {
-    public int CurrentState { get; set; }
+    public string? CurrentState { get; set; }
     public string? ItemId { get; set; }
     public string? CustomerId { get; set; }
     public string? CustomerType { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
-    public int RetryAttempt { get; set; }
     public string? Reason { get; set; }
-    public Guid? ScheduleRetryToken { get; set; }
 
 
     // Default props
     public Guid CorrelationId { get; set; }
-    
     public int Version { get; set; }
 }

@@ -2,6 +2,6 @@
 {
     public class ApiServiceResponse
     {
-        public string SomeResponseValue { get; set; }
+        public string? SomeResponseValue { get; set; }
     }
 }

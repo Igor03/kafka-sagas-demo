@@ -1,6 +1,6 @@
 ﻿namespace OrdersOrchestrator.Contracts
 {
-    public class DeadLetterMessage    
+    public class ErrorMessageEvent    
     {
         public Guid CorrelationId { get; set; }
 

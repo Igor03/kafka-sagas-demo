@@ -16,7 +16,7 @@ namespace OrdersOrchestrator.Services
 
         public Task<bool> ValidateIncomingRequestAsync(OrderRequestEvent @event)
         {
-            return Task.FromResult(@event.ItemId.ToUpper() == "ERROR" || @event.CustomerId.ToUpper() == "ERROR");
+            return Task.FromResult(@event.ItemId!.ToUpper() == "ERROR" || @event.CustomerId!.ToUpper() == "ERROR");
                 
         }
     }
