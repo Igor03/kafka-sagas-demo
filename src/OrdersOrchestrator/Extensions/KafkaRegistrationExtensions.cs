@@ -19,7 +19,7 @@ public static class KafkaRegistrationExtensions
 
         var kafkaTopics = configuration.GetSection("KafkaOptions:Topics").Get<KafkaTopics>();
         var clientConfig = configuration.GetSection("KafkaOptions:ClientConfig").Get<ClientConfig>();
-        clientConfig.SecurityProtocol = SecurityProtocol.SaslSsl;
+        // clientConfig.SecurityProtocol = SecurityProtocol.SaslSsl;
 
         services.AddMassTransit(massTransit =>
         {
