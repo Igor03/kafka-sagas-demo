@@ -20,7 +20,7 @@ namespace OrdersOrchestrator.StateMachines
             });
         }
 
-        public static EventActivityBinder<OrderRequestSagaInstance, ErrorMessageEvent> ProcessRetry(
+        public static EventActivityBinder<OrderRequestSagaInstance, ErrorMessageEvent> NotifySourceSystem(
            this EventActivityBinder<OrderRequestSagaInstance, ErrorMessageEvent> binder)
         {
             var @event = binder.Produce(context =>
@@ -41,7 +41,7 @@ namespace OrdersOrchestrator.StateMachines
             return @event;
         }
 
-        public static ExceptionActivityBinder<TInstance, TData, TException> SendToErrorTopic<TInstance, TData, TException>(
+        public static ExceptionActivityBinder<TInstance, TData, TException> SendErrorEvent<TInstance, TData, TException>(
              this ExceptionActivityBinder<TInstance, TData, TException> source,
              Action<SendContext<ErrorMessageEvent>> contextCallback = default!)
              where TInstance : class, SagaStateMachineInstance
@@ -50,6 +50,8 @@ namespace OrdersOrchestrator.StateMachines
         {
             Func<BehaviorExceptionContext<TInstance, TData, TException>, Task<SendTuple<ErrorMessageEvent>>> messageFactory = context =>
             {
+                LogContext.Info?.Log(context.Saga.CorrelationId.ToString());
+
                 var @event = new
                 {
                     context.Saga.CorrelationId,

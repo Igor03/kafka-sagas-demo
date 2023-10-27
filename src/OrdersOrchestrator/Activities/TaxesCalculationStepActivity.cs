@@ -1,4 +1,5 @@
 ﻿using MassTransit;
+using OrdersOrchestrator.Contracts;
 using OrdersOrchestrator.Contracts.OrderManagement;
 using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
 using OrdersOrchestrator.StateMachines;
@@ -8,10 +9,14 @@ namespace OrdersOrchestrator.Activities
     public class TaxesCalculationStepActivity : IStateMachineActivity<OrderRequestSagaInstance, TaxesCalculationResponseEvent>
     {
         private readonly ITopicProducer<OrderResponseEvent> orderResponseEventProducer;
+        private readonly ITopicProducer<ErrorMessageEvent> deadLetterProducer;
 
-        public TaxesCalculationStepActivity(ITopicProducer<OrderResponseEvent> orderResponseEventProducer)
+        public TaxesCalculationStepActivity(
+            ITopicProducer<OrderResponseEvent> orderResponseEventProducer, 
+            ITopicProducer<ErrorMessageEvent> deadLetterProducer)
         {
             this.orderResponseEventProducer = orderResponseEventProducer;
+            this.deadLetterProducer = deadLetterProducer;
         }
 
         public async Task Execute(
@@ -44,7 +49,18 @@ namespace OrdersOrchestrator.Activities
             IBehavior<OrderRequestSagaInstance, TaxesCalculationResponseEvent> next) 
             where TException : Exception
         {
-            await next.Execute(context);
+            var errorEvent = new
+            {
+                CorrelationId = context.Saga.CorrelationId,
+                Message = context.Message,
+                __Header_Reason = context.Exception.Message,
+            };
+
+            await deadLetterProducer
+                .Produce(errorEvent);
+
+            await next.Execute(context)
+                .ConfigureAwait(false);
         }
 
         public void Accept(StateMachineVisitor visitor) => visitor.Visit(this);

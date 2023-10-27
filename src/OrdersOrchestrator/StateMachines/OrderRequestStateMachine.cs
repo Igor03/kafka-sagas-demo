@@ -30,35 +30,30 @@ public class OrderRequestStateMachine : MassTransitStateMachine<OrderRequestSaga
               .Then(context => LogContext.Info?.Log("Customer validation: {0}", context.Saga.CorrelationId))
               .Activity(config => config.OfType<CustomerValidationStepActivity>())
               .TransitionTo(CalculatingTaxes)
-              .Catch<Exception>(p => p.TransitionTo(Faulted)
+              .Catch<EventExecutionException>(p => p.TransitionTo(Faulted)
                 .Activity(x => x.OfType<CustomerValidationStepActivity>())));
 
         During(CalculatingTaxes,
             When(TaxesCalculationResponseEvent)
                 .Then(context => LogContext.Info?.Log("Taxes calculation: {0}", context.Saga.CorrelationId))
-                .Activity(config => config.OfType<TaxesCalculationStepActivity>().TransitionTo(Faulted))
+                .Activity(config => config.OfType<TaxesCalculationStepActivity>())
                 .TransitionTo(FinishedOrder)
-                .Catch<Exception>(p => p.TransitionTo(Faulted)
-                    // Sending message to error topic outside of an activity
-                    .SendToErrorTopic()));
+                .Catch<EventExecutionException>(p => p.TransitionTo(Faulted)
+                    .Then(p => LogContext.Info?.Log("IGOR: {0}", p.Saga.CurrentState))
+                    .SendErrorEvent()));
 
+        During(CalculatingTaxes,
+            Ignore(FaultEvent));
 
-        // During(Faulted,
-        //    When(DeadLetterRetryEvent)
-        //         .Then(_ => 
-        //         {
-        //             LogContext.Info?.Log("DeadLetter stuff");
-        //         }).TransitionTo(WaitingToRetry));
-        
         During(Faulted,
-            When(DeadLetterRetryEvent)
+            When(FaultEvent)
                 .Activity(config => config.OfType<ProcessFaultedMessageStepActivity>())
-                .Then(context => LogContext.Info?.Log("Message from error topic", context.Saga.CorrelationId)));
-
+                .Then(context => LogContext.Info?.Log("Processing compensation for: {0}", context.Saga.CorrelationId))
+                .Finalize());
 
         WhenEnter(FinishedOrder, x => x.Then(
             context => LogContext.Info?.Log("Order management system notified: {0}",
-            context.Saga.CorrelationId)).TransitionTo(SourceSystemNotified));
+            context.Saga.CorrelationId)).TransitionTo(SourceSystemNotified).Finalize());
 
         // Delete finished saga instances from the database
         SetCompletedWhenFinalized();
@@ -69,22 +64,22 @@ public class OrderRequestStateMachine : MassTransitStateMachine<OrderRequestSaga
         Event(() => OrderRequestedEvent, configurator => 
         {
             configurator.CorrelateById(context => context.Message.CorrelationId);
-            // configurator.OnMissingInstance(m => m.Discard());
+            configurator.OnMissingInstance(m => m.Discard());
         });
         Event(() => CustomerValidationResponseEvent, configurator =>
         {
             configurator.CorrelateById(context => context.Message.CorrelationId);
-            // configurator.OnMissingInstance(m => m.Discard());
+            configurator.OnMissingInstance(m => m.Discard());
         });
         Event(() => TaxesCalculationResponseEvent, configurator =>
         {
             configurator.CorrelateById(context => context.Message.CorrelationId);
-            // configurator.OnMissingInstance(m => m.Discard());
+            configurator.OnMissingInstance(m => m.Discard());
         });
-        Event(() => DeadLetterRetryEvent, configurator =>
+        Event(() => FaultEvent, configurator =>
         {
             configurator.CorrelateById(context => context.Message.CorrelationId);
-            // configurator.OnMissingInstance(m => m.Discard());
+            configurator.OnMissingInstance(m => m.Discard());
         });
     }
 
@@ -103,5 +98,5 @@ public class OrderRequestStateMachine : MassTransitStateMachine<OrderRequestSaga
     public Event<OrderRequestEvent>? OrderRequestedEvent { get; set; }
     public Event<CustomerValidationResponseEvent>? CustomerValidationResponseEvent { get; set; }
     public Event<TaxesCalculationResponseEvent>? TaxesCalculationResponseEvent { get; set; }
-    public Event<ErrorMessageEvent>? DeadLetterRetryEvent { get; set; }
+    public Event<ErrorMessageEvent>? FaultEvent { get; set; }
 }

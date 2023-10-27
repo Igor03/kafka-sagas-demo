@@ -7,6 +7,7 @@ using OrdersOrchestrator.Contracts.OrderManagement;
 using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
 using OrdersOrchestrator.Middlewares;
 using OrdersOrchestrator.StateMachines;
+using StackExchange.Redis;
 
 namespace OrdersOrchestrator.Extensions;
 
@@ -32,12 +33,23 @@ public static class KafkaRegistrationExtensions
             {
                 rider.AddSagaStateMachine<OrderRequestStateMachine, OrderRequestSagaInstance>(c =>
                 {
-                    c.UseMessageRetry(r =>
+                    //c.UseMessageRetry(r =>
+                    //{
+                    //    r.Interval(kafkaTopics.MaxRetriesAttempts, TimeSpan.FromSeconds(3));
+                    //});
+                })//.InMemoryRepository();
+
+                .RedisRepository(p =>
+                {
+                    var redisOptions = new ConfigurationOptions
                     {
-                        r.Interval(kafkaTopics.MaxRetriesAttempts, TimeSpan.FromSeconds(3));
-                    });
-                }).InMemoryRepository();
-                
+                        EndPoints = { "127.0.0.1:6379" },
+                        Password = "eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81",
+                    };
+                    p.ConcurrencyMode = ConcurrencyMode.Pessimistic;
+                    p.DatabaseConfiguration(redisOptions);
+                });
+
                 //.EntityFrameworkRepository(r =>
                 //{
                 //    r.ConcurrencyMode = ConcurrencyMode.Pessimistic;
@@ -55,7 +67,7 @@ public static class KafkaRegistrationExtensions
                 //        });
                 //    });
                 //});
-                
+
                 rider.AddProducer<OrderResponseEvent>(kafkaTopics.OrderManagementSystemResponse);
                 rider.AddProducer<TaxesCalculationRequestEvent>(kafkaTopics.TaxesCalculationEngineRequest);
                 rider.AddProducer<CustomerValidationRequestEvent>(kafkaTopics.CustomerValidationEngineRequest);
