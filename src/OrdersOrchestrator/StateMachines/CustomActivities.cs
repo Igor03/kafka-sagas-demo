@@ -41,15 +41,14 @@ namespace OrdersOrchestrator.StateMachines
             return @event;
         }
 
-        public static ExceptionActivityBinder<TInstance, TData, TException> SendToErrorTopic<TInstance, TData, TException, TMessage>(
+        public static ExceptionActivityBinder<TInstance, TData, TException> SendToErrorTopic<TInstance, TData, TException>(
              this ExceptionActivityBinder<TInstance, TData, TException> source,
-             Action<SendContext<TMessage>> contextCallback = null)
+             Action<SendContext<ErrorMessageEvent>> contextCallback = default!)
              where TInstance : class, SagaStateMachineInstance
              where TData : class
-             where TMessage : class
              where TException : Exception
         {
-            Func<BehaviorExceptionContext<TInstance, TData, TException>, Task<SendTuple<TMessage>>> messageFactory = context =>
+            Func<BehaviorExceptionContext<TInstance, TData, TException>, Task<SendTuple<ErrorMessageEvent>>> messageFactory = context =>
             {
                 var @event = new
                 {
@@ -58,26 +57,13 @@ namespace OrdersOrchestrator.StateMachines
                     __Header_Reason = context.Exception.Message,
                 };
 
-                return context.Init<TMessage>(@event);
+                return context.Init<ErrorMessageEvent>(@event);
             };
 
-            return source.Add(new FaultedProduceActivity<TInstance, TData, TException, TMessage>(
-                MessageFactory<TMessage>.Create(messageFactory, contextCallback)));
+            return source.Add(new FaultedProduceActivity<TInstance, TData, TException, ErrorMessageEvent>(
+                MessageFactory<ErrorMessageEvent>.Create(messageFactory, contextCallback)));
         }
-
-        public static ExceptionActivityBinder<TInstance, TData, TException> Vlah<TInstance, TData, TException, TMessage>(
-           this ExceptionActivityBinder<TInstance, TData, TException> source,
-           Func<BehaviorExceptionContext<TInstance, TData, TException>, Task<SendTuple<TMessage>>> messageFactory,
-           Action<SendContext<TMessage>> contextCallback = null)
-           where TInstance : class, SagaStateMachineInstance
-           where TData : class
-           where TMessage : class
-           where TException : Exception
-        {
-            return source.Add(new FaultedProduceActivity<TInstance, TData, TException, TMessage>(
-                MessageFactory<TMessage>.Create(messageFactory, contextCallback)));
-        }
-
+        
         public static EventActivityBinder<TSaga, TData> LogSaga<TSaga, TData>(this EventActivityBinder<TSaga, TData> binder)
             where TSaga : class, ISaga
             where TData : class

@@ -22,7 +22,7 @@ public class OrderRequestStateMachine : MassTransitStateMachine<OrderRequestSaga
                 .Then(context => LogContext.Info?.Log("Order requested: {0}", context.Saga.CorrelationId))
                 .Activity(config => config.OfType<ReceiveOrderRequestStepActivity>())
                 .TransitionTo(ValidatingCustomer)
-                .Catch<Exception>(p => p.TransitionTo(Faulted)
+                .Catch<EventExecutionException>(p => p.TransitionTo(Faulted)
                     .Activity(x => x.OfType<ReceiveOrderRequestStepActivity>())));
 
         During(ValidatingCustomer,
@@ -39,25 +39,21 @@ public class OrderRequestStateMachine : MassTransitStateMachine<OrderRequestSaga
                 .Activity(config => config.OfType<TaxesCalculationStepActivity>().TransitionTo(Faulted))
                 .TransitionTo(FinishedOrder)
                 .Catch<Exception>(p => p.TransitionTo(Faulted)
-                    .Activity(x => x.OfType<TaxesCalculationStepActivity>())));
+                    // Sending message to error topic outside of an activity
+                    .SendToErrorTopic()));
 
 
+        // During(Faulted,
+        //    When(DeadLetterRetryEvent)
+        //         .Then(_ => 
+        //         {
+        //             LogContext.Info?.Log("DeadLetter stuff");
+        //         }).TransitionTo(WaitingToRetry));
+        
         During(Faulted,
-           When(OrderRequestedEvent)
-               .Then(_ => LogContext.Info?.Log("Compensating for 1"))
-               .TransitionTo(WaitingToRetry),
-           When(CustomerValidationResponseEvent)
-               .Then(_ => LogContext.Info?.Log("Compensating for 2"))
-               .TransitionTo(WaitingToRetry),
-           When(TaxesCalculationResponseEvent)
-               .Then(_ => LogContext.Info?.Log("Compensating for 3"))
-               .TransitionTo(WaitingToRetry),
-           When(DeadLetterRetryEvent)
-                .Then(_ => 
-                {
-                    LogContext.Info?.Log("DeadLetter stuff");
-                })
-                .TransitionTo(WaitingToRetry));
+            When(DeadLetterRetryEvent)
+                .Activity(config => config.OfType<ProcessFaultedMessageStepActivity>())
+                .Then(context => LogContext.Info?.Log("Message from error topic", context.Saga.CorrelationId)));
 
 
         WhenEnter(FinishedOrder, x => x.Then(

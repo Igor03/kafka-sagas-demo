@@ -1,16 +1,12 @@
 using Confluent.Kafka;
 using MassTransit;
-using MassTransit.EntityFrameworkCoreIntegration;
-using Microsoft.EntityFrameworkCore;
 using OrdersOrchestrator.Configuration;
 using OrdersOrchestrator.Contracts;
 using OrdersOrchestrator.Contracts.CustomerValidationEngine;
 using OrdersOrchestrator.Contracts.OrderManagement;
 using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
-using OrdersOrchestrator.Database;
 using OrdersOrchestrator.Middlewares;
 using OrdersOrchestrator.StateMachines;
-using System.Reflection;
 
 namespace OrdersOrchestrator.Extensions;
 
@@ -36,7 +32,10 @@ public static class KafkaRegistrationExtensions
             {
                 rider.AddSagaStateMachine<OrderRequestStateMachine, OrderRequestSagaInstance>(c =>
                 {
-                    c.UseMessageRetry(r => { r.Interval(kafkaTopics.MaxRetriesAttempts, TimeSpan.FromSeconds(3)); });
+                    c.UseMessageRetry(r =>
+                    {
+                        r.Interval(kafkaTopics.MaxRetriesAttempts, TimeSpan.FromSeconds(3));
+                    });
                 }).InMemoryRepository();
                 
                 //.EntityFrameworkRepository(r =>
@@ -74,9 +73,8 @@ public static class KafkaRegistrationExtensions
                            topicConfig.DiscardSkippedMessages();
                            topicConfig.ConfigureSaga<OrderRequestSagaInstance>(riderContext);
                            topicConfig.UseInMemoryOutbox(riderContext);
-
                            topicConfig.UseConsumeFilter(typeof(LoggingMiddlewareFilter<>), riderContext);
-                           topicConfig.ConfigureError(callback => { callback.UseFilter(new FaultCompensationMiddlewareFilter()); });
+                           // topicConfig.ConfigureError(callback => { callback.UseFilter(new FaultCompensationMiddlewareFilter()); });
                        });
 
                     kafkaConfig.TopicEndpoint<string, TaxesCalculationResponseEvent>(
@@ -88,6 +86,7 @@ public static class KafkaRegistrationExtensions
                            topicConfig.DiscardSkippedMessages();
                            topicConfig.ConfigureSaga<OrderRequestSagaInstance>(riderContext);
                            topicConfig.UseInMemoryOutbox(riderContext);
+                           topicConfig.UseConsumeFilter(typeof(LoggingMiddlewareFilter<>), riderContext);
                        });
 
                     kafkaConfig.TopicEndpoint<string, CustomerValidationResponseEvent>(
@@ -99,6 +98,7 @@ public static class KafkaRegistrationExtensions
                            topicConfig.DiscardSkippedMessages();
                            topicConfig.ConfigureSaga<OrderRequestSagaInstance>(riderContext);
                            topicConfig.UseInMemoryOutbox(riderContext);
+                           topicConfig.UseConsumeFilter(typeof(LoggingMiddlewareFilter<>), riderContext);
                        });
 
                     kafkaConfig.TopicEndpoint<string, ErrorMessageEvent>(
@@ -110,9 +110,9 @@ public static class KafkaRegistrationExtensions
                           topicConfig.DiscardSkippedMessages();
                           topicConfig.ConfigureSaga<OrderRequestSagaInstance>(riderContext);                           
                           topicConfig.UseInMemoryOutbox(riderContext);
+                          topicConfig.UseConsumeFilter(typeof(LoggingMiddlewareFilter<>), riderContext);
 
                       });
-
                 });
             });
         });

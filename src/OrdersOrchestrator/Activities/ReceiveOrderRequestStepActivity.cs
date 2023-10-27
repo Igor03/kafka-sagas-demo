@@ -27,13 +27,11 @@ namespace OrdersOrchestrator.Activities
             BehaviorContext<OrderRequestSagaInstance, OrderRequestEvent> context, 
             IBehavior<OrderRequestSagaInstance, OrderRequestEvent> next)
         {
-            Thread.Sleep(1500);
-
             if (await apiService
                 .ValidateIncomingRequestAsync(context.Message)
                 .ConfigureAwait(false))
             {
-                throw new Exception(context.Saga.Reason!);
+                throw new System.ArgumentException("Some validation error was thrown");
             }
 
             var customerValidationEvent = new
@@ -58,11 +56,11 @@ namespace OrdersOrchestrator.Activities
             {
                 CorrelationId = context.Saga.CorrelationId,
                 Message = context.Message,
-                __Header_RetryAttempt = 2,
-                __Header_Reason = context.Saga.Reason,
+                __Header_Reason = context.Exception.Message,
             };
                 
-            await deadLetterProducer.Produce(deadLetterEvent);
+            await deadLetterProducer
+                .Produce(deadLetterEvent);
 
             await next.Execute(context)
                 .ConfigureAwait(false);
