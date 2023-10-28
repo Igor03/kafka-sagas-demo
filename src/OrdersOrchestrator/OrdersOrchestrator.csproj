@@ -27,8 +27,4 @@
     <ItemGroup>
       <Compile Remove="Extensions\Kafka.cs" />
     </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Migrations\" />
-    </ItemGroup>
 </Project>

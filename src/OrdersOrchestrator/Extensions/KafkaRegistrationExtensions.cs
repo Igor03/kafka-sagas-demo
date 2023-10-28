@@ -24,21 +24,17 @@ public static class KafkaRegistrationExtensions
 
         services.AddMassTransit(massTransit =>
         {
-            massTransit.UsingInMemory((context, cfg) =>
-            {
-                cfg.ConfigureEndpoints(context);
-            });
+            massTransit.UsingInMemory((context, cfg) =>  cfg.ConfigureEndpoints(context));
             
             massTransit.AddRider(rider =>
             {
                 rider.AddSagaStateMachine<OrderRequestStateMachine, OrderRequestSagaInstance>(c =>
                 {
-                    //c.UseMessageRetry(r =>
-                    //{
-                    //    r.Interval(kafkaTopics.MaxRetriesAttempts, TimeSpan.FromSeconds(3));
-                    //});
+                    c.UseMessageRetry(r =>
+                    {
+                        r.Interval(kafkaTopics.MaxRetriesAttempts, TimeSpan.FromSeconds(3));
+                    });
                 })//.InMemoryRepository();
-
                 .RedisRepository(p =>
                 {
                     var redisOptions = new ConfigurationOptions
@@ -49,7 +45,6 @@ public static class KafkaRegistrationExtensions
                     p.ConcurrencyMode = ConcurrencyMode.Pessimistic;
                     p.DatabaseConfiguration(redisOptions);
                 });
-
                 //.EntityFrameworkRepository(r =>
                 //{
                 //    r.ConcurrencyMode = ConcurrencyMode.Pessimistic;
@@ -68,7 +63,7 @@ public static class KafkaRegistrationExtensions
                 //    });
                 //});
 
-                rider.AddProducer<OrderResponseEvent>(kafkaTopics.OrderManagementSystemResponse);
+                rider.AddProducer<ResponseWrapper<OrderResponseEvent>>(kafkaTopics.OrderManagementSystemResponse);
                 rider.AddProducer<TaxesCalculationRequestEvent>(kafkaTopics.TaxesCalculationEngineRequest);
                 rider.AddProducer<CustomerValidationRequestEvent>(kafkaTopics.CustomerValidationEngineRequest);
                 rider.AddProducer<ErrorMessageEvent>(kafkaTopics.Deadletter);
@@ -86,7 +81,7 @@ public static class KafkaRegistrationExtensions
                            topicConfig.ConfigureSaga<OrderRequestSagaInstance>(riderContext);
                            topicConfig.UseInMemoryOutbox(riderContext);
                            topicConfig.UseConsumeFilter(typeof(LoggingMiddlewareFilter<>), riderContext);
-                           // topicConfig.ConfigureError(callback => { callback.UseFilter(new FaultCompensationMiddlewareFilter()); });
+                           topicConfig.ConfigureError(callback => { callback.UseFilter(new FaultCompensationMiddlewareFilter()); });
                        });
 
                     kafkaConfig.TopicEndpoint<string, TaxesCalculationResponseEvent>(

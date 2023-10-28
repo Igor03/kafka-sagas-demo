@@ -8,11 +8,11 @@ namespace OrdersOrchestrator.Activities
 {
     public class TaxesCalculationStepActivity : IStateMachineActivity<OrderRequestSagaInstance, TaxesCalculationResponseEvent>
     {
-        private readonly ITopicProducer<OrderResponseEvent> orderResponseEventProducer;
+        private readonly ITopicProducer<ResponseWrapper<OrderResponseEvent>> orderResponseEventProducer;
         private readonly ITopicProducer<ErrorMessageEvent> deadLetterProducer;
 
         public TaxesCalculationStepActivity(
-            ITopicProducer<OrderResponseEvent> orderResponseEventProducer, 
+            ITopicProducer<ResponseWrapper<OrderResponseEvent>> orderResponseEventProducer, 
             ITopicProducer<ErrorMessageEvent> deadLetterProducer)
         {
             this.orderResponseEventProducer = orderResponseEventProducer;
@@ -39,7 +39,11 @@ namespace OrdersOrchestrator.Activities
                 FinishedAt = DateTime.Now,
             };
 
-            await orderResponseEventProducer.Produce(orderResponseEvent);
+            await orderResponseEventProducer.Produce(new ResponseWrapper<OrderResponseEvent>
+            {
+                Data = orderResponseEvent,
+                Success = true,
+            });
 
             await next.Execute(context);
         }

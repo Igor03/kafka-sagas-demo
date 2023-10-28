@@ -19,44 +19,44 @@ public class OrderRequestStateMachine : MassTransitStateMachine<OrderRequestSaga
         Initially(
             When(OrderRequestedEvent)
                 .InitializeSaga()
-                .Then(context => LogContext.Info?.Log("Order requested: {0}", context.Saga.CorrelationId))
                 .Activity(config => config.OfType<ReceiveOrderRequestStepActivity>())
                 .TransitionTo(ValidatingCustomer)
-                .Catch<EventExecutionException>(p => p.TransitionTo(Faulted)
-                    .Activity(x => x.OfType<ReceiveOrderRequestStepActivity>())));
+                .Catch<EventExecutionException>(callback => callback.TransitionTo(Faulted)
+                    // In case we need process more complex fault compensation routines
+                    .Activity(c => c.OfType<ReceiveOrderRequestStepActivity>())), 
+            Ignore(FaultEvent));
 
         During(ValidatingCustomer,
             When(CustomerValidationResponseEvent)
-              .Then(context => LogContext.Info?.Log("Customer validation: {0}", context.Saga.CorrelationId))
+              .UpdateSaga()
               .Activity(config => config.OfType<CustomerValidationStepActivity>())
               .TransitionTo(CalculatingTaxes)
-              .Catch<EventExecutionException>(p => p.TransitionTo(Faulted)
-                .Activity(x => x.OfType<CustomerValidationStepActivity>())));
+              .Catch<EventExecutionException>(callback => callback.TransitionTo(Faulted)
+                  // Simply produces a new error event to the error topic
+                .SendErrorEvent()), 
+            Ignore(FaultEvent));
 
         During(CalculatingTaxes,
             When(TaxesCalculationResponseEvent)
-                .Then(context => LogContext.Info?.Log("Taxes calculation: {0}", context.Saga.CorrelationId))
+                .UpdateSaga()
                 .Activity(config => config.OfType<TaxesCalculationStepActivity>())
                 .TransitionTo(FinishedOrder)
-                .Catch<EventExecutionException>(p => p.TransitionTo(Faulted)
-                    .Then(p => LogContext.Info?.Log("IGOR: {0}", p.Saga.CurrentState))
-                    .SendErrorEvent()));
-
-        During(CalculatingTaxes,
+                .Catch<EventExecutionException>(callback => callback.TransitionTo(Faulted)
+                    // Simply produces a new error event to the error topic
+                    .SendErrorEvent()), 
             Ignore(FaultEvent));
 
         During(Faulted,
             When(FaultEvent)
-                .Activity(config => config.OfType<ProcessFaultedMessageStepActivity>())
-                .Then(context => LogContext.Info?.Log("Processing compensation for: {0}", context.Saga.CorrelationId))
+                .NotifySourceSystem()
                 .Finalize());
 
         WhenEnter(FinishedOrder, x => x.Then(
             context => LogContext.Info?.Log("Order management system notified: {0}",
             context.Saga.CorrelationId)).TransitionTo(SourceSystemNotified).Finalize());
 
-        // Delete finished saga instances from the database
-        SetCompletedWhenFinalized();
+        // Delete finished saga instances from the repository
+        // SetCompletedWhenFinalized();
     }
 
     private void CorrelateEvents()
@@ -83,18 +83,14 @@ public class OrderRequestStateMachine : MassTransitStateMachine<OrderRequestSaga
         });
     }
 
-    private void RegisterStates()
-    {
-        InstanceState(x => x.CurrentState);
-    }
-
-    public State? Placed { get; set; }
+    private void RegisterStates() 
+        => InstanceState(x => x.CurrentState);
+    
     public State? ValidatingCustomer { get; set; }
     public State? CalculatingTaxes { get; set; }
     public State? FinishedOrder { get; set; }
     public State? SourceSystemNotified { get; set; }
     public State? Faulted { get; set; }
-    public State? WaitingToRetry { get; set; }
     public Event<OrderRequestEvent>? OrderRequestedEvent { get; set; }
     public Event<CustomerValidationResponseEvent>? CustomerValidationResponseEvent { get; set; }
     public Event<TaxesCalculationResponseEvent>? TaxesCalculationResponseEvent { get; set; }

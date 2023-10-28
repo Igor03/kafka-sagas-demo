@@ -1,9 +1,10 @@
 ﻿namespace OrdersOrchestrator.Contracts
 {
-    public class ResponseWrapper
+    public class ResponseWrapper<TMessage>
+        where TMessage: class
     {
         public bool Success { get; set; }
         public string? Reason { get; set; }
-        public object? Data { get; set; }
+        public TMessage? Data { get; set; }
     }
 }

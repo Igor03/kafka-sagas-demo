@@ -2,7 +2,7 @@ using MassTransit;
 
 namespace OrdersOrchestrator.StateMachines;
 
-public sealed class OrderRequestSagaInstance : SagaStateMachineInstance, ISagaVersion
+public class OrderRequestSagaInstance : SagaStateMachineInstance, ISagaVersion
 {
     public string? CurrentState { get; set; }
     public string? ItemId { get; set; }
@@ -11,8 +11,7 @@ public sealed class OrderRequestSagaInstance : SagaStateMachineInstance, ISagaVe
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public string? Reason { get; set; }
-
-
+    
     // Default props
     public Guid CorrelationId { get; set; }
     public int Version { get; set; }

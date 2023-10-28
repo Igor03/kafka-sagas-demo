@@ -11,16 +11,16 @@ namespace OrdersOrchestrator.Activities
     {
         private readonly IApiService apiService;
         private readonly ITopicProducer<CustomerValidationRequestEvent> customerValidationEngineProducer;
-        private readonly ITopicProducer<ErrorMessageEvent> deadLetterProducer;
+        private readonly ITopicProducer<ErrorMessageEvent> errorProducer;
 
         public ReceiveOrderRequestStepActivity(
             IApiService apiService, 
             ITopicProducer<CustomerValidationRequestEvent> customerValidationEngineProducer, 
-            ITopicProducer<ErrorMessageEvent> deadLetterProducer)
+            ITopicProducer<ErrorMessageEvent> errorProducer)
         {
             this.apiService = apiService;
             this.customerValidationEngineProducer = customerValidationEngineProducer;
-            this.deadLetterProducer = deadLetterProducer;
+            this.errorProducer = errorProducer;
         }
 
         public async Task Execute(
@@ -31,7 +31,7 @@ namespace OrdersOrchestrator.Activities
                 .ValidateIncomingRequestAsync(context.Message)
                 .ConfigureAwait(false))
             {
-                throw new System.ArgumentException("Some validation error was thrown");
+                throw new Exception("Some validation error was thrown");
             }
 
             var customerValidationEvent = new
@@ -52,21 +52,25 @@ namespace OrdersOrchestrator.Activities
             IBehavior<OrderRequestSagaInstance, OrderRequestEvent> next) 
             where TException : Exception
         {
-            var deadLetterEvent = new
+
+            context.Saga.Reason = context.Exception.Message;
+            context.Saga.UpdatedAt = DateTime.Now;
+            
+            // In case we need to process more complex fault compensation routines
+            var errorEvent = new
             {
                 CorrelationId = context.Saga.CorrelationId,
                 Message = context.Message,
                 __Header_Reason = context.Exception.Message,
             };
                 
-            await deadLetterProducer
-                .Produce(deadLetterEvent);
+            await errorProducer
+                .Produce(errorEvent);
 
             await next.Execute(context)
                 .ConfigureAwait(false);
         }
         
-
         public void Probe(ProbeContext context) => context.CreateScope("order-placed");
         public void Accept(StateMachineVisitor visitor) => visitor.Visit(this);
         
