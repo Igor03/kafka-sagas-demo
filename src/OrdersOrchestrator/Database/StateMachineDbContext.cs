@@ -1,11 +1,10 @@
 ﻿using MassTransit.EntityFrameworkCoreIntegration;
 using Microsoft.EntityFrameworkCore;
 
-namespace OrdersOrchestrator.Database
-{
+namespace OrdersOrchestrator.Database;
+
     public class StateMachineDbContext : SagaDbContext
     {
-
         public StateMachineDbContext(DbContextOptions options)
             : base(options)
         {
@@ -15,4 +14,3 @@ namespace OrdersOrchestrator.Database
             get { yield return new OrderRequestSagaInstanceMap(); }
         }
     }
-}

@@ -2,72 +2,56 @@
 using OrdersOrchestrator.Contracts;
 using OrdersOrchestrator.Contracts.OrderManagement;
 using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
+using OrdersOrchestrator.Services;
 using OrdersOrchestrator.StateMachines;
 
-namespace OrdersOrchestrator.Activities
+namespace OrdersOrchestrator.Activities;
+
+public sealed class TaxesCalculationStepActivity : IStateMachineActivity<OrderRequestSagaInstance, TaxesCalculationResponseEvent>
 {
-    public class TaxesCalculationStepActivity : IStateMachineActivity<OrderRequestSagaInstance, TaxesCalculationResponseEvent>
+    private readonly ITopicProducer<ResponseWrapper<OrderResponseEvent>> orderResponseEventProducer;
+    private readonly IApiService apiService;
+    
+    public TaxesCalculationStepActivity(
+        ITopicProducer<ResponseWrapper<OrderResponseEvent>> orderResponseEventProducer, 
+        IApiService apiService)
     {
-        private readonly ITopicProducer<ResponseWrapper<OrderResponseEvent>> orderResponseEventProducer;
-        private readonly ITopicProducer<ErrorMessageEvent> deadLetterProducer;
-
-        public TaxesCalculationStepActivity(
-            ITopicProducer<ResponseWrapper<OrderResponseEvent>> orderResponseEventProducer, 
-            ITopicProducer<ErrorMessageEvent> deadLetterProducer)
-        {
-            this.orderResponseEventProducer = orderResponseEventProducer;
-            this.deadLetterProducer = deadLetterProducer;
-        }
-
-        public async Task Execute(
-            BehaviorContext<OrderRequestSagaInstance, TaxesCalculationResponseEvent> context, 
-            IBehavior<OrderRequestSagaInstance, TaxesCalculationResponseEvent> next)
-        {
-            Thread.Sleep(1500);
-
-            if (context.Message.ItemId!.ToUpper() == "S_ERROR")
-            {
-                throw new Exception("Erro no segundo processo");
-            }
-
-            var orderResponseEvent = new OrderResponseEvent
-            {
-                CorrelationId = context.Saga.CorrelationId,
-                CustomerId = context.Saga.CustomerId,
-                CustomerType= context.Saga.CustomerType,
-                TaxesCalculation = context.Message,
-                FinishedAt = DateTime.Now,
-            };
-
-            await orderResponseEventProducer.Produce(new ResponseWrapper<OrderResponseEvent>
-            {
-                Data = orderResponseEvent,
-                Success = true,
-            });
-
-            await next.Execute(context);
-        }
-
-        public async Task Faulted<TException>(
-            BehaviorExceptionContext<OrderRequestSagaInstance, TaxesCalculationResponseEvent, TException> context, 
-            IBehavior<OrderRequestSagaInstance, TaxesCalculationResponseEvent> next) 
-            where TException : Exception
-        {
-            var errorEvent = new
-            {
-                CorrelationId = context.Saga.CorrelationId,
-                Message = context.Message,
-                __Header_Reason = context.Exception.Message,
-            };
-
-            await deadLetterProducer
-                .Produce(errorEvent);
-
-            await next.Execute(context)
-                .ConfigureAwait(false);
-        }
-
-        public void Accept(StateMachineVisitor visitor) => visitor.Visit(this);
-        public void Probe(ProbeContext context) => context.CreateScope("taxes-calculation");
+        this.orderResponseEventProducer = orderResponseEventProducer;
+        this.apiService = apiService;
     }
+
+    public async Task Execute(
+        BehaviorContext<OrderRequestSagaInstance, TaxesCalculationResponseEvent> context, 
+        IBehavior<OrderRequestSagaInstance, TaxesCalculationResponseEvent> next)
+    {
+        if (await apiService.ValidateIncomingTaxesCalculationResult(context.Message))
+        {
+            throw new Exception("Error during the taxes calculation. Not a transient exception");
+        }
+
+        var orderResponseEvent = new OrderResponseEvent
+        {
+            CorrelationId = context.Saga.CorrelationId,
+            CustomerId = context.Saga.CustomerId,
+            CustomerType= context.Saga.CustomerType,
+            TaxesCalculation = context.Message,
+            FinishedAt = DateTime.Now,
+        };
+
+        await orderResponseEventProducer.Produce(new ResponseWrapper<OrderResponseEvent>
+        {
+            Data = orderResponseEvent,
+            Success = true,
+        });
+
+        await next.Execute(context);
+    }
+
+    public async Task Faulted<TException>(
+        BehaviorExceptionContext<OrderRequestSagaInstance, TaxesCalculationResponseEvent, TException> context, 
+        IBehavior<OrderRequestSagaInstance, TaxesCalculationResponseEvent> next) 
+        where TException : Exception => await next.Execute(context).ConfigureAwait(false);
+
+    public void Accept(StateMachineVisitor visitor) => visitor.Visit(this);
+    public void Probe(ProbeContext context) => context.CreateScope("taxes-calculation");
 }

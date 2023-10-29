@@ -10,8 +10,6 @@ public sealed class OrderRequest
     }
 
     public Guid CorrelationId { get; set; }
-
     public string CustomerId { get; set; }
-
     public string ItemId { get; set; }
 }

@@ -1,9 +1,7 @@
-﻿namespace CustomerValidationEngine.Contracts
-{
-    public sealed class CustomerValidationRequest
-    {
-        public Guid CorrelationId { get; set; }
+﻿namespace CustomerValidationEngine.Contracts;
 
-        public string? CustomerId { get; set; }
-    }
+public sealed class CustomerValidationRequest
+{
+    public Guid CorrelationId { get; set; }
+    public string? CustomerId { get; set; }
 }

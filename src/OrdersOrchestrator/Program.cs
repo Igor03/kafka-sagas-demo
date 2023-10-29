@@ -14,6 +14,5 @@ var app = builder.Build();
 app.UseRouting();
 app.UseHttpsRedirection();
 app.UseAuthorization();
-// app.UseEndpoints(p => p.MapCustomHealthChecks());
 app.MapControllers();
 app.Run();

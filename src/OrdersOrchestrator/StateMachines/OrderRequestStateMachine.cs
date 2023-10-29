@@ -16,14 +16,17 @@ public class OrderRequestStateMachine : MassTransitStateMachine<OrderRequestSaga
         // Registering and correlating events
         CorrelateEvents();
 
+        var maxRetriesAttempts =
+            configuration.GetSection("KafkaOptions:Topics").GetValue<short>("MaxRetriesAttempts");
+        
         Initially(
             When(OrderRequestedEvent)
                 .InitializeSaga()
                 .Activity(config => config.OfType<ReceiveOrderRequestStepActivity>())
                 .TransitionTo(ValidatingCustomer)
                 .Catch<EventExecutionException>(callback => callback.TransitionTo(Faulted)
-                    // In case we need process more complex fault compensation routines
-                    .Activity(c => c.OfType<ReceiveOrderRequestStepActivity>())), 
+                    // In case we need to process more complex fault compensation routines
+                    .Activity(compCallback => compCallback.OfType<ReceiveOrderRequestStepActivity>())),
             Ignore(FaultEvent));
 
         During(ValidatingCustomer,
@@ -46,10 +49,16 @@ public class OrderRequestStateMachine : MassTransitStateMachine<OrderRequestSaga
                     .SendErrorEvent()), 
             Ignore(FaultEvent));
 
+        
+        // TODO: Add a schedule to delay messages redeliveries following this doc: https://masstransit.io/documentation/patterns/saga/state-machine#schedule
         During(Faulted,
             When(FaultEvent)
-                .NotifySourceSystem()
-                .Finalize());
+                // We can create more complex logic here to decide whether the message should be retried
+                .IfElse(context => context.Saga.Attempts < maxRetriesAttempts,
+                    i => i.TransitionTo(Initial).RestartProcess(),
+                    e => e.NotifySourceSystem().TransitionTo(FinishedOrder)));
+        
+        During(Final, Ignore(FaultEvent));
 
         WhenEnter(FinishedOrder, x => x.Then(
             context => LogContext.Info?.Log("Order management system notified: {0}",
@@ -61,26 +70,25 @@ public class OrderRequestStateMachine : MassTransitStateMachine<OrderRequestSaga
 
     private void CorrelateEvents()
     {
-        Event(() => OrderRequestedEvent, configurator => 
-        {
-            configurator.CorrelateById(context => context.Message.CorrelationId);
-            configurator.OnMissingInstance(m => m.Discard());
-        });
-        Event(() => CustomerValidationResponseEvent, configurator =>
-        {
-            configurator.CorrelateById(context => context.Message.CorrelationId);
-            configurator.OnMissingInstance(m => m.Discard());
-        });
-        Event(() => TaxesCalculationResponseEvent, configurator =>
-        {
-            configurator.CorrelateById(context => context.Message.CorrelationId);
-            configurator.OnMissingInstance(m => m.Discard());
-        });
-        Event(() => FaultEvent, configurator =>
-        {
-            configurator.CorrelateById(context => context.Message.CorrelationId);
-            configurator.OnMissingInstance(m => m.Discard());
-        });
+        Event(() => OrderRequestedEvent, x => x
+            .CorrelateById(m => m.Message.CorrelationId)
+            .SelectId(m => m.Message.CorrelationId)
+            .OnMissingInstance(m => m.Discard()));
+        
+        Event(() => CustomerValidationResponseEvent, x => x
+            .CorrelateById(m => m.Message.CorrelationId)
+            .SelectId(m => m.Message.CorrelationId)
+            .OnMissingInstance(m => m.Discard()));
+        
+        Event(() => TaxesCalculationResponseEvent, x => x
+            .CorrelateById(m => m.Message.CorrelationId)
+            .SelectId(m => m.Message.CorrelationId)
+            .OnMissingInstance(m => m.Discard()));
+        
+        Event(() => FaultEvent, x => x
+            .CorrelateById(m => m.Message.CorrelationId)
+            .SelectId(m => m.Message.CorrelationId)
+            .OnMissingInstance(m => m.Discard()));
     }
 
     private void RegisterStates() 

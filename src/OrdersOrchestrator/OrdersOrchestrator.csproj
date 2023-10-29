@@ -26,5 +26,6 @@
 
     <ItemGroup>
       <Compile Remove="Extensions\Kafka.cs" />
+      <Compile Remove="Middlewares\LoggingMiddlewareFilter.cs" />
     </ItemGroup>
 </Project>
