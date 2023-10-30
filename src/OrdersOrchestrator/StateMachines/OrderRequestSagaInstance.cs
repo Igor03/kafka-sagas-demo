@@ -16,7 +16,4 @@ public class OrderRequestSagaInstance : SagaStateMachineInstance, ISagaVersion
     // Default props
     public Guid CorrelationId { get; set; }
     public int Version { get; set; }
-    
-    // If using Optimistic concurrency, this property is required
-    // public byte[]? RowVersion { get; set; }
 }

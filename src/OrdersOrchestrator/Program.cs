@@ -7,7 +7,6 @@ builder.Services.AddCustomKafka(builder.Configuration);
 builder.Services.AddControllers();
 builder.Services.AddHealthChecks();
 builder.Services.AddTransient<IApiService, ApiService>();
-// builder.Services.AddRequestHandlers();
 
 var app = builder.Build();
 

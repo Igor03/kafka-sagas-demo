@@ -53,7 +53,7 @@ public class OrderRequestStateMachine : MassTransitStateMachine<OrderRequestSaga
         // TODO: Add a schedule to delay messages redeliveries following this doc: https://masstransit.io/documentation/patterns/saga/state-machine#schedule
         During(Faulted,
             When(FaultEvent)
-                // We can create more complex logic here to decide whether the message should be retried
+                // We can create more complex logic here to decide whether the message should be retried/redelivered
                 .IfElse(context => context.Saga.Attempts < maxRetriesAttempts,
                     i => i.TransitionTo(Initial).RestartProcess(),
                     e => e.NotifySourceSystem().TransitionTo(FinishedOrder)));
@@ -65,7 +65,7 @@ public class OrderRequestStateMachine : MassTransitStateMachine<OrderRequestSaga
             context.Saga.CorrelationId)).TransitionTo(SourceSystemNotified).Finalize());
 
         // Delete finished saga instances from the repository
-        // SetCompletedWhenFinalized();
+        SetCompletedWhenFinalized();
     }
 
     private void CorrelateEvents()

@@ -9,7 +9,7 @@ public class OrderRequestSagaDefinition : SagaDefinition<OrderRequestSagaInstanc
     public OrderRequestSagaDefinition(IConfiguration configuration)
     {
         // Processing up to 5 messages at time
-        ConcurrentMessageLimit = 1;
+        ConcurrentMessageLimit = 5;
     }
     
     protected override void ConfigureSaga(IReceiveEndpointConfigurator endpointConfigurator, ISagaConfigurator<OrderRequestSagaInstance> sagaConfigurator,
