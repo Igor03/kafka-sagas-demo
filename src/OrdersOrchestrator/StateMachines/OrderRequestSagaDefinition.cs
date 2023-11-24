@@ -16,7 +16,11 @@ public class OrderRequestSagaDefinition : SagaDefinition<OrderRequestSagaInstanc
         IRegistrationContext context)
     {
         // Retrying unhandled exceptions by the saga state machine
-        sagaConfigurator.UseMessageRetry(r => r.Interval(3, 1000));
+        sagaConfigurator.UseMessageRetry(r => 
+            {
+                r.Interval(3, 1000);
+            }
+        );
         
         // Configuring a filter for all the registered events in the state machine
         sagaConfigurator.UseFilter(new SagaLoggingMiddlewareFilter<OrderRequestSagaInstance>());

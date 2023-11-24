@@ -16,6 +16,8 @@ public class CustomerValidationConsumer : IConsumer<CustomerValidationRequest>
     {
         ArgumentNullException.ThrowIfNull(context, nameof(context));
 
+        await Task.Delay(5000);
+
         var response = new CustomerValidationResponse
         {
             CustomerType = GenerateCustomerType(),

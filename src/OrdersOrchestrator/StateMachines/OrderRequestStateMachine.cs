@@ -65,7 +65,7 @@ public class OrderRequestStateMachine : MassTransitStateMachine<OrderRequestSaga
             context.Saga.CorrelationId)).TransitionTo(SourceSystemNotified).Finalize());
 
         // Delete finished saga instances from the repository
-        SetCompletedWhenFinalized();
+        // SetCompletedWhenFinalized();
     }
 
     private void CorrelateEvents()
