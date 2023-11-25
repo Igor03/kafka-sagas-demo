@@ -17,7 +17,6 @@ public static class KafkaRegistrationExtensions
         var kafkaOptions = configuration
             .GetSection(nameof(KafkaOptions))
             .Get<KafkaOptions>();
-        kafkaOptions.ClientConfig.SecurityProtocol = SecurityProtocol.SaslSsl;
 
         services.AddMassTransit(massTransit =>
         {
@@ -30,9 +29,11 @@ public static class KafkaRegistrationExtensions
                 {
                     var redisOptions = new ConfigurationOptions
                     {
-                        EndPoints = { "127.0.0.1:6379" },
-                        Password = "eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81",
+                        EndPoints = { kafkaOptions.RedisDb.Endpoint },
+                        Password = kafkaOptions.RedisDb.Password,
                     };
+                    
+                    p.KeyPrefix = kafkaOptions.RedisDb.KeyPrefix;
                     
                     // Since we have multiple services and states
                     p.ConcurrencyMode = ConcurrencyMode.Pessimistic;
@@ -41,7 +42,7 @@ public static class KafkaRegistrationExtensions
 
                 rider.AddProducer<string, NotificationReply<OrderResponseEvent>>(kafkaOptions.Topics.OrderManagementSystemResponse);
                 rider.AddProducer<string, TaxesCalculationRequestEvent>(kafkaOptions.Topics.TaxesCalculationEngineRequest);
-                rider.AddProducer<string, CustomerValidationRequestEvent>(kafkaOptions.Topics.CustomerValidationEngineRequest);
+                rider.AddProducer<CustomerValidationRequestEvent>(kafkaOptions.Topics.CustomerValidationEngineRequest);
                 rider.AddProducer<string, FaultMessageEvent>(kafkaOptions.Topics.Error);
                 rider.AddProducer<string, OrderRequestEvent>(kafkaOptions.Topics.OrderManagementSystemRequest);
                 

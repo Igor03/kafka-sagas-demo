@@ -1,4 +1,5 @@
 using Confluent.Kafka;
+using StackExchange.Redis;
 
 namespace Contracts.Configuration;
 
@@ -8,6 +9,7 @@ public sealed record KafkaOptions
     public Topics Topics { get; set; } = default!;
     public ClientConfig ClientConfig { get; set; } = default!;
     public MongoDb MongoDb { get; set; } = default!;
+    public RedisDb RedisDb { get; set; } = default!;
 };
 
 public sealed record Topics
@@ -25,4 +27,11 @@ public sealed record MongoDb
 {
     public string ConnectionString { get; set; } = default!;
     public string Database { get; set; } = default!;
+}
+
+public sealed record RedisDb
+{
+    public string Endpoint { get; set; } = default!;
+    public string Password { get; set; } = default!;
+    public string KeyPrefix { get; set; } = default!;
 }
