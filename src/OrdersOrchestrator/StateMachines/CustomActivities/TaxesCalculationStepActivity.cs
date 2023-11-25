@@ -1,4 +1,5 @@
 ﻿using Contracts;
+using Contracts.Exceptions;
 using MassTransit;
 using OrdersOrchestrator.Services;
 
@@ -18,13 +19,13 @@ public sealed class TaxesCalculationStepActivity
         this.apiService = apiService;
     }
 
-    public async Task Execute(
+    async Task IStateMachineActivity<OrderRequestSagaInstance, TaxesCalculationResponseEvent>.Execute(
         BehaviorContext<OrderRequestSagaInstance, TaxesCalculationResponseEvent> context, 
         IBehavior<OrderRequestSagaInstance, TaxesCalculationResponseEvent> next)
     {
         if (await apiService.ValidateIncomingTaxesCalculationResult(context.Message))
         {
-            throw new Exception("Error during the taxes calculation. Not a transient exception");
+            throw new NotATransientException("Error during order request validation!");
         }
 
         var orderResponseEvent = new OrderResponseEvent
@@ -43,11 +44,11 @@ public sealed class TaxesCalculationStepActivity
         await next.Execute(context);
     }
 
-    public async Task Faulted<TException>(
+    async Task IStateMachineActivity<OrderRequestSagaInstance, TaxesCalculationResponseEvent>.Faulted<TException>(
         BehaviorExceptionContext<OrderRequestSagaInstance, TaxesCalculationResponseEvent, TException> context, 
         IBehavior<OrderRequestSagaInstance, TaxesCalculationResponseEvent> next) 
-        where TException : Exception => await next.Execute(context).ConfigureAwait(false);
+            => await next.Faulted(context).ConfigureAwait(false);
 
-    public void Accept(StateMachineVisitor visitor) => visitor.Visit(this);
-    public void Probe(ProbeContext context) => context.CreateScope("taxes-calculation");
+    void IProbeSite.Probe(ProbeContext context) => context.CreateScope(nameof(ReceiveOrderRequestStepActivity));
+    void IVisitable.Accept(StateMachineVisitor visitor) => visitor.Visit(this);
 }

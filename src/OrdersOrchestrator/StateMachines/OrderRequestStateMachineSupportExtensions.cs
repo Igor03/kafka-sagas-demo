@@ -34,8 +34,8 @@ public static class OrderRequestStateMachineSupportExtensions
                 context.Saga.UpdatedAt = DateTime.Now;
             });
     
-    public static EventActivityBinder<OrderRequestSagaInstance, ErrorMessageEvent> NotifySourceSystem(
-       this EventActivityBinder<OrderRequestSagaInstance, ErrorMessageEvent> binder)
+    public static EventActivityBinder<OrderRequestSagaInstance, FaultMessageEvent> NotifySourceSystem(
+       this EventActivityBinder<OrderRequestSagaInstance, FaultMessageEvent> binder)
     {
         var @event = binder.Produce(context =>
         {
@@ -54,8 +54,8 @@ public static class OrderRequestStateMachineSupportExtensions
         return @event;
     }
     
-    public static EventActivityBinder<OrderRequestSagaInstance, ErrorMessageEvent> RestartProcess(
-        this EventActivityBinder<OrderRequestSagaInstance, ErrorMessageEvent> binder)
+    public static EventActivityBinder<OrderRequestSagaInstance, FaultMessageEvent> RestartProcess(
+        this EventActivityBinder<OrderRequestSagaInstance, FaultMessageEvent> binder)
     {
         var @event = binder.Produce(context =>
         {
@@ -78,12 +78,12 @@ public static class OrderRequestStateMachineSupportExtensions
 
     public static ExceptionActivityBinder<TInstance, TData, TException> SendErrorEvent<TInstance, TData, TException>(
          this ExceptionActivityBinder<TInstance, TData, TException> source,
-         Action<SendContext<ErrorMessageEvent>> contextCallback = default!)
+         Action<SendContext<FaultMessageEvent>> contextCallback = default!)
          where TInstance : OrderRequestSagaInstance
          where TData : class
          where TException : Exception
     {
-        Func<BehaviorExceptionContext<TInstance, TData, TException>, Task<SendTuple<ErrorMessageEvent>>> messageFactory = context =>
+        Func<BehaviorExceptionContext<TInstance, TData, TException>, Task<SendTuple<FaultMessageEvent>>> messageFactory = context =>
         {
             // Updating Saga with exception message
             context.Saga.Reason = context.Exception.Message;
@@ -99,10 +99,10 @@ public static class OrderRequestStateMachineSupportExtensions
                 __Header_Attempts = context.Saga.Attempts
             };
 
-            return context.Init<ErrorMessageEvent>(@event);
+            return context.Init<FaultMessageEvent>(@event);
         };
 
-        return source.Add(new FaultedProduceActivity<TInstance, TData, TException, ErrorMessageEvent>(
-            MessageFactory<ErrorMessageEvent>.Create(messageFactory, contextCallback)));
+        return source.Add(new FaultedProduceActivity<TInstance, TData, TException, FaultMessageEvent>(
+            MessageFactory<FaultMessageEvent>.Create(messageFactory, contextCallback)));
     }
 }

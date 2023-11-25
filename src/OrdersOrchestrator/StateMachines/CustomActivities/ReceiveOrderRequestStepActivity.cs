@@ -1,26 +1,28 @@
 ﻿using Contracts;
+using Contracts.Exceptions;
 using MassTransit;
 using OrdersOrchestrator.Services;
 
 namespace OrdersOrchestrator.StateMachines.CustomActivities;
 
-public sealed class ReceiveOrderRequestStepActivity : IStateMachineActivity<OrderRequestSagaInstance, OrderRequestEvent>
+public sealed class ReceiveOrderRequestStepActivity 
+    : IStateMachineActivity<OrderRequestSagaInstance, OrderRequestEvent>
 {
     private readonly IApiService apiService;
     private readonly ITopicProducer<CustomerValidationRequestEvent> customerValidationEngineProducer;
-    private readonly ITopicProducer<ErrorMessageEvent> errorProducer;
+    private readonly ITopicProducer<FaultMessageEvent> errorProducer;
 
     public ReceiveOrderRequestStepActivity(
         IApiService apiService, 
         ITopicProducer<CustomerValidationRequestEvent> customerValidationEngineProducer, 
-        ITopicProducer<ErrorMessageEvent> errorProducer)
+        ITopicProducer<FaultMessageEvent> errorProducer)
     {
         this.apiService = apiService;
         this.customerValidationEngineProducer = customerValidationEngineProducer;
         this.errorProducer = errorProducer;
     }
 
-    public async Task Execute(
+    async Task IStateMachineActivity<OrderRequestSagaInstance, OrderRequestEvent>.Execute(
         BehaviorContext<OrderRequestSagaInstance, OrderRequestEvent> context, 
         IBehavior<OrderRequestSagaInstance, OrderRequestEvent> next)
     {
@@ -29,8 +31,7 @@ public sealed class ReceiveOrderRequestStepActivity : IStateMachineActivity<Orde
             .ValidateIncomingOrderRequestAsync(context.Message)
             .ConfigureAwait(false))
         {
-            // Not a transient exception...
-            throw new Exception("Error during order request validation!. Not a transient exception");
+            throw new NotATransientException("Error during order request validation!");
         }
 
         var customerValidationEvent = new
@@ -45,10 +46,9 @@ public sealed class ReceiveOrderRequestStepActivity : IStateMachineActivity<Orde
             .ConfigureAwait(false);
     }
 
-    public async Task Faulted<TException>(
+    async Task IStateMachineActivity<OrderRequestSagaInstance, OrderRequestEvent>.Faulted<TException>(
         BehaviorExceptionContext<OrderRequestSagaInstance, OrderRequestEvent, TException> context, 
         IBehavior<OrderRequestSagaInstance, OrderRequestEvent> next) 
-        where TException : Exception
     {
         // Updating saga with useful information about the current state
         context.Saga.Reason = context.Exception.Message;
@@ -73,8 +73,8 @@ public sealed class ReceiveOrderRequestStepActivity : IStateMachineActivity<Orde
             .ConfigureAwait(false);
     }
     
-    public void Probe(ProbeContext context) => context.CreateScope("order-placed");
-    public void Accept(StateMachineVisitor visitor) => visitor.Visit(this);
+    void IProbeSite.Probe(ProbeContext context) => context.CreateScope(nameof(ReceiveOrderRequestStepActivity));
+    void IVisitable.Accept(StateMachineVisitor visitor) => visitor.Visit(this);
     
 }
 

@@ -62,6 +62,12 @@ public sealed class OrderRequestStateMachine
             context => LogContext.Info?.Log("Order management system notified: {0}",
             context.Saga.CorrelationId)).TransitionTo(SourceSystemNotified).Finalize());
 
+        During(Final,
+            Ignore(OrderRequestedEvent),
+            Ignore(CustomerValidationResponseEvent),
+            Ignore(TaxesCalculationResponseEvent),
+            Ignore(FaultEvent));
+        
         // Delete finished saga instances from the repository
         // SetCompletedWhenFinalized();
     }
@@ -100,5 +106,5 @@ public sealed class OrderRequestStateMachine
     public Event<OrderRequestEvent>? OrderRequestedEvent { get; set; }
     public Event<CustomerValidationResponseEvent>? CustomerValidationResponseEvent { get; set; }
     public Event<TaxesCalculationResponseEvent>? TaxesCalculationResponseEvent { get; set; }
-    public Event<ErrorMessageEvent>? FaultEvent { get; set; }
+    public Event<FaultMessageEvent>? FaultEvent { get; set; }
 }

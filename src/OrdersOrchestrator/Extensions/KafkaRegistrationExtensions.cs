@@ -14,7 +14,9 @@ public static class KafkaRegistrationExtensions
         ArgumentNullException.ThrowIfNull(services, nameof(services));
         ArgumentNullException.ThrowIfNull(configuration, nameof(configuration));
 
-        var kafkaOptions = configuration.GetSection("KafkaOptions:Topics").Get<KafkaOptions>();
+        var kafkaOptions = configuration
+            .GetSection(nameof(KafkaOptions))
+            .Get<KafkaOptions>();
         // clientConfig.SecurityProtocol = SecurityProtocol.SaslSsl;
 
         services.AddMassTransit(massTransit =>
@@ -40,7 +42,7 @@ public static class KafkaRegistrationExtensions
                 rider.AddProducer<NotificationReply<OrderResponseEvent>>(kafkaOptions.Topics.OrderManagementSystemResponse);
                 rider.AddProducer<TaxesCalculationRequestEvent>(kafkaOptions.Topics.TaxesCalculationEngineRequest);
                 rider.AddProducer<CustomerValidationRequestEvent>(kafkaOptions.Topics.CustomerValidationEngineRequest);
-                rider.AddProducer<ErrorMessageEvent>(kafkaOptions.Topics.Error);
+                rider.AddProducer<FaultMessageEvent>(kafkaOptions.Topics.Error);
                 rider.AddProducer<OrderRequestEvent>(kafkaOptions.Topics.OrderManagementSystemRequest);
                 
                 rider.UsingKafka(kafkaOptions.ClientConfig, (riderContext, kafkaConfig) =>
@@ -78,7 +80,7 @@ public static class KafkaRegistrationExtensions
                            topicConfig.UseInMemoryOutbox(riderContext);
                        });
 
-                    kafkaConfig.TopicEndpoint<string, ErrorMessageEvent>(
+                    kafkaConfig.TopicEndpoint<string, FaultMessageEvent>(
                       topicName: kafkaOptions.Topics.Error,
                       groupId: kafkaOptions.Topics.Error,
                       configure: topicConfig =>
