@@ -17,7 +17,7 @@ public static class KafkaRegistrationExtensions
         var kafkaOptions = configuration
             .GetSection(nameof(KafkaOptions))
             .Get<KafkaOptions>();
-        // clientConfig.SecurityProtocol = SecurityProtocol.SaslSsl;
+        kafkaOptions.ClientConfig.SecurityProtocol = SecurityProtocol.SaslSsl;
 
         services.AddMassTransit(massTransit =>
         {
@@ -39,11 +39,11 @@ public static class KafkaRegistrationExtensions
                     p.DatabaseConfiguration(redisOptions);
                 });
 
-                rider.AddProducer<NotificationReply<OrderResponseEvent>>(kafkaOptions.Topics.OrderManagementSystemResponse);
-                rider.AddProducer<TaxesCalculationRequestEvent>(kafkaOptions.Topics.TaxesCalculationEngineRequest);
-                rider.AddProducer<CustomerValidationRequestEvent>(kafkaOptions.Topics.CustomerValidationEngineRequest);
-                rider.AddProducer<FaultMessageEvent>(kafkaOptions.Topics.Error);
-                rider.AddProducer<OrderRequestEvent>(kafkaOptions.Topics.OrderManagementSystemRequest);
+                rider.AddProducer<string, NotificationReply<OrderResponseEvent>>(kafkaOptions.Topics.OrderManagementSystemResponse);
+                rider.AddProducer<string, TaxesCalculationRequestEvent>(kafkaOptions.Topics.TaxesCalculationEngineRequest);
+                rider.AddProducer<string, CustomerValidationRequestEvent>(kafkaOptions.Topics.CustomerValidationEngineRequest);
+                rider.AddProducer<string, FaultMessageEvent>(kafkaOptions.Topics.Error);
+                rider.AddProducer<string, OrderRequestEvent>(kafkaOptions.Topics.OrderManagementSystemRequest);
                 
                 rider.UsingKafka(kafkaOptions.ClientConfig, (riderContext, kafkaConfig) =>
                 {

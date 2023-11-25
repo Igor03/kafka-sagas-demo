@@ -25,6 +25,10 @@ public sealed class OrdersController : ControllerBase
             .Produce(key.ToString(), orderRequest)
             .ConfigureAwait(false);
 
-        return Accepted(orderRequest);
+        return Accepted(new
+        {
+            CorrelationId = correlationId,
+            Key = key
+        });
     }
 }
