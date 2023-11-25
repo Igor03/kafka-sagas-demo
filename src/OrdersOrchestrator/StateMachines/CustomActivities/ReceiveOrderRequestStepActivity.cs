@@ -1,11 +1,8 @@
-﻿using MassTransit;
-using OrdersOrchestrator.Contracts;
-using OrdersOrchestrator.Contracts.CustomerValidationEngine;
-using OrdersOrchestrator.Contracts.OrderManagement;
+﻿using Contracts;
+using MassTransit;
 using OrdersOrchestrator.Services;
-using OrdersOrchestrator.StateMachines;
 
-namespace OrdersOrchestrator.Activities;
+namespace OrdersOrchestrator.StateMachines.CustomActivities;
 
 public sealed class ReceiveOrderRequestStepActivity : IStateMachineActivity<OrderRequestSagaInstance, OrderRequestEvent>
 {
@@ -38,7 +35,6 @@ public sealed class ReceiveOrderRequestStepActivity : IStateMachineActivity<Orde
 
         var customerValidationEvent = new
         {
-            context.Message.CorrelationId,
             context.Message.CustomerId,
         };
 

@@ -1,7 +1,6 @@
-using Confluent.Kafka;
+using Contracts;
+using Contracts.Configuration;
 using MassTransit;
-using OrdersManagementApi.Configuration;
-using OrdersManagementApi.Contracts;
 
 namespace OrdersManagementApi.Extensions;
 
@@ -14,17 +13,17 @@ internal static class KafkaExtensions
         ArgumentNullException.ThrowIfNull(services, nameof(services));
         ArgumentNullException.ThrowIfNull(configuration, nameof(configuration));
 
-        var kafkaTopics = configuration.GetSection("KafkaOptions:Topics").Get<KafkaTopics>();
-        var clientConfig = configuration.GetSection("KafkaOptions:ClientConfig").Get<ClientConfig>();
-        // clientConfig.SecurityProtocol = SecurityProtocol.SaslSsl;
-
+        var kafkaOptions = configuration
+            .GetSection("KafkaOptions")
+            .Get<KafkaOptions>();
+        
         services.AddMassTransit(configureMassTransit =>
         {
             configureMassTransit.UsingInMemory();
             configureMassTransit.AddRider(configureRider =>
             {
-                configureRider.AddProducer<string, OrderRequest>(kafkaTopics.SourceSystem);
-                configureRider.UsingKafka(clientConfig, (_, _) => { });
+                configureRider.AddProducer<string, OrderRequestEvent>(kafkaOptions.Topics.OrderManagementSystemRequest);
+                configureRider.UsingKafka(kafkaOptions.ClientConfig, (_, _) => { });
             });
         });
         

@@ -1,6 +1,6 @@
-﻿namespace OrdersOrchestrator.Contracts
+﻿namespace Contracts
 {
-    public class ResponseWrapper<TMessage>
+    public sealed class NotificationReply<TMessage>
         where TMessage: class
     {
         public bool Success { get; set; }

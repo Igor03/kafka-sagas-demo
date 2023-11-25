@@ -1,8 +1,8 @@
 ﻿using Confluent.Kafka;
+using Contracts;
+using Contracts.Configuration;
 using MassTransit;
-using TaxesCalculationEngine.Configuration;
 using TaxesCalculationEngine.Consumers;
-using TaxesCalculationEngine.Contracts;
 
 namespace TaxesCalculationEngine.Extensions;
 
@@ -13,8 +13,7 @@ public static class KafkaRegistrationExtensions
         ArgumentNullException.ThrowIfNull(services, nameof(services));
         ArgumentNullException.ThrowIfNull(configuration, nameof(configuration));
 
-        var kafkaTopics = configuration.GetSection("KafkaOptions:Topics").Get<KafkaTopics>();
-        var clientConfig = configuration.GetSection("KafkaOptions:ClientConfig").Get<ClientConfig>();
+        var kafkaOptions = configuration.GetSection("KafkaOptions").Get<KafkaOptions>();
         // clientConfig.SecurityProtocol = SecurityProtocol.SaslSsl;
 
         services.AddMassTransit(massTransit =>
@@ -23,15 +22,14 @@ public static class KafkaRegistrationExtensions
 
             massTransit.AddRider(rider =>
             {
-                rider.AddProducer<string, TaxesCalculationResponse>(kafkaTopics.TaxesCalculationEngineResponse);
+                rider.AddProducer<string, TaxesCalculationResponseEvent>(kafkaOptions.Topics.TaxesCalculationEngineResponse);
                 rider.AddConsumersFromNamespaceContaining<TaxesCalculationConsumer>();
 
-                // Receiving Taxes Calculation request
-                rider.UsingKafka(clientConfig, (riderContext, kafkaConfig) =>
+                rider.UsingKafka(kafkaOptions.ClientConfig, (riderContext, kafkaConfig) =>
                 {
-                    kafkaConfig.TopicEndpoint<string, TaxesCalculationRequest>(
-                        topicName: kafkaTopics.TaxesCalculationEngineRequest,
-                        groupId: kafkaTopics.DefaultGroup,
+                    kafkaConfig.TopicEndpoint<string, TaxesCalculationRequestEvent>(
+                        topicName: kafkaOptions.Topics.TaxesCalculationEngineRequest,
+                        groupId: kafkaOptions.ConsumerGroup,
                         configure: topicConfig =>
                         {
                             topicConfig.AutoOffsetReset = AutoOffsetReset.Earliest;

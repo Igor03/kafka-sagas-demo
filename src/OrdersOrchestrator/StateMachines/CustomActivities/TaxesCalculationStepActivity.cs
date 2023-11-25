@@ -1,19 +1,17 @@
-﻿using MassTransit;
-using OrdersOrchestrator.Contracts;
-using OrdersOrchestrator.Contracts.OrderManagement;
-using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
+﻿using Contracts;
+using MassTransit;
 using OrdersOrchestrator.Services;
-using OrdersOrchestrator.StateMachines;
 
-namespace OrdersOrchestrator.Activities;
+namespace  OrdersOrchestrator.StateMachines.CustomActivities;
 
-public sealed class TaxesCalculationStepActivity : IStateMachineActivity<OrderRequestSagaInstance, TaxesCalculationResponseEvent>
+public sealed class TaxesCalculationStepActivity 
+    : IStateMachineActivity<OrderRequestSagaInstance, TaxesCalculationResponseEvent>
 {
-    private readonly ITopicProducer<ResponseWrapper<OrderResponseEvent>> orderResponseEventProducer;
+    private readonly ITopicProducer<NotificationReply<OrderResponseEvent>> orderResponseEventProducer;
     private readonly IApiService apiService;
     
     public TaxesCalculationStepActivity(
-        ITopicProducer<ResponseWrapper<OrderResponseEvent>> orderResponseEventProducer, 
+        ITopicProducer<NotificationReply<OrderResponseEvent>> orderResponseEventProducer, 
         IApiService apiService)
     {
         this.orderResponseEventProducer = orderResponseEventProducer;
@@ -31,14 +29,12 @@ public sealed class TaxesCalculationStepActivity : IStateMachineActivity<OrderRe
 
         var orderResponseEvent = new OrderResponseEvent
         {
-            CorrelationId = context.Saga.CorrelationId,
-            CustomerId = context.Saga.CustomerId,
-            CustomerType= context.Saga.CustomerType,
+            CustomerId = context.Saga.CustomerId!,
+            CustomerType= context.Saga.CustomerType!,
             TaxesCalculation = context.Message,
-            FinishedAt = DateTime.Now,
         };
 
-        await orderResponseEventProducer.Produce(new ResponseWrapper<OrderResponseEvent>
+        await orderResponseEventProducer.Produce(new NotificationReply<OrderResponseEvent>
         {
             Data = orderResponseEvent,
             Success = true,

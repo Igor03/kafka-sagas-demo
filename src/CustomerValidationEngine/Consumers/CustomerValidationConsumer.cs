@@ -1,31 +1,31 @@
-﻿using CustomerValidationEngine.Contracts;
+﻿using Contracts;
 using MassTransit;
 
 namespace CustomerValidationEngine.Consumers;
 
-public class CustomerValidationConsumer : IConsumer<CustomerValidationRequest>
+public sealed class CustomerValidationConsumer : IConsumer<CustomerValidationRequestEvent>
 {
-    private readonly ITopicProducer<string, CustomerValidationResponse> producer;
+    private readonly ITopicProducer<string, CustomerValidationResponseEvent> producer;
 
-    public CustomerValidationConsumer(ITopicProducer<string, CustomerValidationResponse> producer)
+    public CustomerValidationConsumer(ITopicProducer<string,CustomerValidationResponseEvent> producer)
     {
         this.producer = producer;
     }
 
-    public async Task Consume(ConsumeContext<CustomerValidationRequest> context)
+    async Task IConsumer<CustomerValidationRequestEvent>
+        .Consume(ConsumeContext<CustomerValidationRequestEvent> context)
     {
         ArgumentNullException.ThrowIfNull(context, nameof(context));
 
-        await Task.Delay(5000);
-
-        var response = new CustomerValidationResponse
+        var key = Guid.NewGuid();
+            
+        var response = new CustomerValidationResponseEvent
         {
             CustomerType = GenerateCustomerType(),
-            CorrelationId = context.Message.CorrelationId,
         };
 
         await producer
-            .Produce(context.GetKey<string>(), response)
+            .Produce(key.ToString(), response)
             .ConfigureAwait(false);
     }
 

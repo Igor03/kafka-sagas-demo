@@ -28,4 +28,8 @@
       <Compile Remove="Extensions\Kafka.cs" />
       <Compile Remove="Middlewares\LoggingMiddlewareFilter.cs" />
     </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Contracts\Contracts.csproj" />
+    </ItemGroup>
 </Project>

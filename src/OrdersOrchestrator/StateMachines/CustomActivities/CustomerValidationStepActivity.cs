@@ -1,34 +1,35 @@
-﻿using MassTransit;
-using OrdersOrchestrator.Contracts.CustomerValidationEngine;
-using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
+﻿using Contracts;
+using Contracts.Exceptions;
+using MassTransit;
 using OrdersOrchestrator.Services;
-using OrdersOrchestrator.StateMachines;
 
-namespace OrdersOrchestrator.Activities;
+namespace OrdersOrchestrator.StateMachines.CustomActivities;
 
-public sealed class CustomerValidationStepActivity : IStateMachineActivity<OrderRequestSagaInstance, CustomerValidationResponseEvent>
+public sealed class CustomerValidationStepActivity 
+    : IStateMachineActivity<OrderRequestSagaInstance, CustomerValidationResponseEvent>
 {
     private readonly ITopicProducer<TaxesCalculationRequestEvent> taxesCalculationEngineProducer;
     private readonly IApiService apiService;
     
-    public CustomerValidationStepActivity(ITopicProducer<TaxesCalculationRequestEvent> taxesCalculationEngineProducer, IApiService apiService)
+    public CustomerValidationStepActivity(
+        ITopicProducer<TaxesCalculationRequestEvent> taxesCalculationEngineProducer, 
+        IApiService apiService)
     {
         this.taxesCalculationEngineProducer = taxesCalculationEngineProducer;
         this.apiService = apiService;
     }
     
-    public async Task Execute(
+    async Task IStateMachineActivity<OrderRequestSagaInstance, CustomerValidationResponseEvent>.Execute(
         BehaviorContext<OrderRequestSagaInstance, CustomerValidationResponseEvent> context, 
         IBehavior<OrderRequestSagaInstance, CustomerValidationResponseEvent> next)
     {
         if (await apiService.ValidateIncomingCustomerValidationResult(context.Message))
         {
-            throw new Exception("Error during the customer validation!. Not a transient exception");
+            throw new NotATransientException("Error during the customer validation!");
         }
         
         var taxesCalculationRequestEvent = new TaxesCalculationRequestEvent
         {
-            CorrelationId = context.Saga.CorrelationId,
             ItemId = context.Saga.ItemId!,
             CustomerType = context.Message.CustomerType
         };
@@ -37,12 +38,12 @@ public sealed class CustomerValidationStepActivity : IStateMachineActivity<Order
         await next.Execute(context);
     }
 
-    public async Task Faulted<TException>(
+    async Task IStateMachineActivity<OrderRequestSagaInstance, CustomerValidationResponseEvent>.Faulted<TException>(
         BehaviorExceptionContext<OrderRequestSagaInstance, CustomerValidationResponseEvent, TException> context, 
         IBehavior<OrderRequestSagaInstance, CustomerValidationResponseEvent> next) 
-        where TException : Exception => await next.Execute(context).ConfigureAwait(false);
+            => await next.Faulted(context).ConfigureAwait(false);
 
-    public void Probe(ProbeContext context) => context.CreateScope("customer-validation");
-    public void Accept(StateMachineVisitor visitor) => visitor.Visit(this);
+    void IProbeSite.Probe(ProbeContext context) => context.CreateScope(nameof(CustomerValidationStepActivity));
+    void IVisitable.Accept(StateMachineVisitor visitor) => visitor.Visit(this);
 }
 

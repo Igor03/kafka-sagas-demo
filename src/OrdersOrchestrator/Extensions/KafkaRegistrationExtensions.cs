@@ -1,10 +1,7 @@
 using Confluent.Kafka;
+using Contracts;
+using Contracts.Configuration;
 using MassTransit;
-using OrdersOrchestrator.Configuration;
-using OrdersOrchestrator.Contracts;
-using OrdersOrchestrator.Contracts.CustomerValidationEngine;
-using OrdersOrchestrator.Contracts.OrderManagement;
-using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
 using OrdersOrchestrator.StateMachines;
 using StackExchange.Redis;
 
@@ -17,8 +14,7 @@ public static class KafkaRegistrationExtensions
         ArgumentNullException.ThrowIfNull(services, nameof(services));
         ArgumentNullException.ThrowIfNull(configuration, nameof(configuration));
 
-        var kafkaTopics = configuration.GetSection("KafkaOptions:Topics").Get<KafkaTopics>();
-        var clientConfig = configuration.GetSection("KafkaOptions:ClientConfig").Get<ClientConfig>();
+        var kafkaOptions = configuration.GetSection("KafkaOptions:Topics").Get<KafkaOptions>();
         // clientConfig.SecurityProtocol = SecurityProtocol.SaslSsl;
 
         services.AddMassTransit(massTransit =>
@@ -41,17 +37,17 @@ public static class KafkaRegistrationExtensions
                     p.DatabaseConfiguration(redisOptions);
                 });
 
-                rider.AddProducer<ResponseWrapper<OrderResponseEvent>>(kafkaTopics.OrderManagementSystemResponse);
-                rider.AddProducer<TaxesCalculationRequestEvent>(kafkaTopics.TaxesCalculationEngineRequest);
-                rider.AddProducer<CustomerValidationRequestEvent>(kafkaTopics.CustomerValidationEngineRequest);
-                rider.AddProducer<ErrorMessageEvent>(kafkaTopics.Deadletter);
-                rider.AddProducer<OrderRequestEvent>(kafkaTopics.OrderManagementSystemRequest);
+                rider.AddProducer<NotificationReply<OrderResponseEvent>>(kafkaOptions.Topics.OrderManagementSystemResponse);
+                rider.AddProducer<TaxesCalculationRequestEvent>(kafkaOptions.Topics.TaxesCalculationEngineRequest);
+                rider.AddProducer<CustomerValidationRequestEvent>(kafkaOptions.Topics.CustomerValidationEngineRequest);
+                rider.AddProducer<ErrorMessageEvent>(kafkaOptions.Topics.Error);
+                rider.AddProducer<OrderRequestEvent>(kafkaOptions.Topics.OrderManagementSystemRequest);
                 
-                rider.UsingKafka(clientConfig, (riderContext, kafkaConfig) =>
+                rider.UsingKafka(kafkaOptions.ClientConfig, (riderContext, kafkaConfig) =>
                 {
                     kafkaConfig.TopicEndpoint<string, OrderRequestEvent>(
-                       topicName: kafkaTopics.OrderManagementSystemRequest,
-                       groupId: kafkaTopics.DefaultGroup,
+                       topicName: kafkaOptions.Topics.OrderManagementSystemRequest,
+                       groupId: kafkaOptions.ConsumerGroup,
                        configure: topicConfig =>
                        {
                            topicConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
@@ -61,8 +57,8 @@ public static class KafkaRegistrationExtensions
                        });
 
                     kafkaConfig.TopicEndpoint<string, TaxesCalculationResponseEvent>(
-                       topicName: kafkaTopics.TaxesCalculationEngineResponse,
-                       groupId: kafkaTopics.DefaultGroup,
+                       topicName: kafkaOptions.Topics.TaxesCalculationEngineResponse,
+                       groupId: kafkaOptions.ConsumerGroup,
                        configure: topicConfig =>
                        {
                            topicConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
@@ -72,8 +68,8 @@ public static class KafkaRegistrationExtensions
                        });
 
                     kafkaConfig.TopicEndpoint<string, CustomerValidationResponseEvent>(
-                       topicName: kafkaTopics.CustomerValidationEngineResponse,
-                       groupId: kafkaTopics.DefaultGroup,
+                       topicName: kafkaOptions.Topics.CustomerValidationEngineResponse,
+                       groupId: kafkaOptions.ConsumerGroup,
                        configure: topicConfig =>
                        {
                            topicConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
@@ -83,8 +79,8 @@ public static class KafkaRegistrationExtensions
                        });
 
                     kafkaConfig.TopicEndpoint<string, ErrorMessageEvent>(
-                      topicName: kafkaTopics.Deadletter,
-                      groupId: kafkaTopics.DefaultGroup,
+                      topicName: kafkaOptions.Topics.Error,
+                      groupId: kafkaOptions.Topics.Error,
                       configure: topicConfig =>
                       {
                           topicConfig.AutoOffsetReset = AutoOffsetReset.Earliest;

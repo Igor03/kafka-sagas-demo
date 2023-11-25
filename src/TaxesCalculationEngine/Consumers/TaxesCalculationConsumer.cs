@@ -1,44 +1,54 @@
-﻿using MassTransit;
-using TaxesCalculationEngine.Contracts;
+﻿using Contracts;
+using MassTransit;
 
 namespace TaxesCalculationEngine.Consumers;
 
-public class TaxesCalculationConsumer : IConsumer<TaxesCalculationRequest>
+public sealed class TaxesCalculationConsumer : IConsumer<TaxesCalculationRequestEvent>
 {
-    private readonly ITopicProducer<string, TaxesCalculationResponse> taxesCalculationProducer;
+    private readonly ITopicProducer<string, TaxesCalculationResponseEvent> producer;
 
-    public TaxesCalculationConsumer(ITopicProducer<string, TaxesCalculationResponse> taxesCalculationProducer)
+    public TaxesCalculationConsumer(ITopicProducer<string, TaxesCalculationResponseEvent> producer)
     {
-        this.taxesCalculationProducer = taxesCalculationProducer;
+        this.producer = producer;
     }
 
-    public async Task Consume(ConsumeContext<TaxesCalculationRequest> context)
+    async Task IConsumer<TaxesCalculationRequestEvent>
+        .Consume(ConsumeContext<TaxesCalculationRequestEvent> context)
     {
         ArgumentNullException.ThrowIfNull(context, nameof(context));
+        
+        var key = Guid.NewGuid();
+        var calculationFactor = GenerateCalculationFactor(context.Message.CustomerType);
+        var response = BuildResponse(context.Message.ItemId, calculationFactor);
+        
+        // Sending the calculated taxes based on the ItemId and the CustomerType
+        await producer
+            .Produce(key.ToString(), response)
+            .ConfigureAwait(false);
+    }
+    
+    private static int GenerateCalculationFactor(string customerType) 
+        // This might be an enum
+        => customerType switch
+            {
+                "Regular" => 100,
+                "Premium" => 50,
+                "Super Premium" => 20,
+                _ => throw new ArgumentOutOfRangeException()
+            };
 
-        var customerType = context.Message.CustomerType!;
-
-        var calculationFactor = customerType switch
-        {
-            "Regular" => 100,
-            "Premium" => 50,
-            "Super Premium" => 20,
-            _ => throw new ArgumentOutOfRangeException()
-        };
-
+    private static TaxesCalculationResponseEvent BuildResponse(string itemId, int calculationFactor)
+    {
         var rnd = new Random();
-        var response = new TaxesCalculationResponse
+        
+        var response = new TaxesCalculationResponseEvent
         {
-            CorrelationId = context.Message.CorrelationId,
-            ItemId = context.Message.ItemId!,
+            ItemId = itemId,
             TaxAAA = (decimal)rnd.NextInt64(0, calculationFactor) / 10,
             TaxBBB = (decimal)rnd.NextInt64(0, calculationFactor) / 10,
             TaxCCC = (decimal)rnd.NextInt64(0, calculationFactor) / 10,
         };
 
-        // Sending the calculated taxes based on the ItemId
-        await taxesCalculationProducer
-            .Produce(context.GetKey<string>(), response)
-            .ConfigureAwait(false);
+        return response;
     }
 }

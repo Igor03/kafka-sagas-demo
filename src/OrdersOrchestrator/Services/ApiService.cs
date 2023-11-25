@@ -1,8 +1,4 @@
-﻿using MassTransit;
-using OrdersOrchestrator.Contracts.ApiService;
-using OrdersOrchestrator.Contracts.CustomerValidationEngine;
-using OrdersOrchestrator.Contracts.OrderManagement;
-using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
+﻿using Contracts;
 
 namespace OrdersOrchestrator.Services
 {

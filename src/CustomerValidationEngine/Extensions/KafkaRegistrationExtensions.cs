@@ -1,7 +1,7 @@
 ﻿using Confluent.Kafka;
-using CustomerValidationEngine.Configuration;
+using Contracts;
+using Contracts.Configuration;
 using CustomerValidationEngine.Consumers;
-using CustomerValidationEngine.Contracts;
 using MassTransit;
 
 namespace CustomerValidationEngine.Extensions;
@@ -13,10 +13,10 @@ public static class KafkaRegistrationExtensions
         ArgumentNullException.ThrowIfNull(services, nameof(services));
         ArgumentNullException.ThrowIfNull(configuration, nameof(configuration));
 
-        var kafkaTopics = configuration.GetSection("KafkaOptions:Topics").Get<KafkaTopics>();
-        var clientConfig = configuration.GetSection("KafkaOptions:ClientConfig").Get<ClientConfig>();
-        // clientConfig.SecurityProtocol = SecurityProtocol.SaslSsl;
-
+        var kafkaOptions = configuration
+            .GetSection("KafkaOptions")
+            .Get<KafkaOptions>();
+        
         services.AddMassTransit(massTransit =>
         {
             massTransit.UsingInMemory((context, cfg) =>
@@ -26,15 +26,14 @@ public static class KafkaRegistrationExtensions
 
             massTransit.AddRider(rider =>
             {
-                rider.AddProducer<string, CustomerValidationResponse>(kafkaTopics.CustomerValidationEngineResponse);
+                rider.AddProducer<string, CustomerValidationResponseEvent>(kafkaOptions.Topics.CustomerValidationEngineResponse);
                 rider.AddConsumersFromNamespaceContaining<CustomerValidationConsumer>();
 
-                // Receiving Taxes Calculation request
-                rider.UsingKafka(clientConfig, (riderContext, kafkaConfig) =>
+                rider.UsingKafka(kafkaOptions.ClientConfig, (riderContext, kafkaConfig) =>
                 {
-                    kafkaConfig.TopicEndpoint<string, CustomerValidationRequest>(
-                       topicName: kafkaTopics.CustomerValidationEngineRequest,
-                       groupId: kafkaTopics.DefaultGroup,
+                    kafkaConfig.TopicEndpoint<string, CustomerValidationRequestEvent>(
+                       topicName: kafkaOptions.Topics.CustomerValidationEngineRequest,
+                       groupId: kafkaOptions.ConsumerGroup,
                        configure: topicConfig =>
                        {
                            topicConfig.AutoOffsetReset = AutoOffsetReset.Earliest;

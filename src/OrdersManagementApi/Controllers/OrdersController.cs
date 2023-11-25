@@ -1,26 +1,25 @@
+using Contracts;
 using MassTransit;
 using Microsoft.AspNetCore.Mvc;
-using OrdersManagementApi.Contracts;
 
 namespace OrdersManagementApi.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class OrdersController : ControllerBase
+public sealed class OrdersController : ControllerBase
 {
-    private readonly ITopicProducer<string, OrderRequest> _producer;
+    private readonly ITopicProducer<string, OrderRequestEvent> _producer;
 
-    public OrdersController(ITopicProducer<string, OrderRequest> producer)
+    public OrdersController(ITopicProducer<string, OrderRequestEvent> producer)
     {
         _producer = producer;
     }
 
     [HttpPost(Name = "Place")]
-    public async Task<ActionResult> Post([FromBody] OrderRequest orderRequest)
+    public async Task<ActionResult> Post([FromBody] OrderRequestEvent orderRequest)
     {
         var key = Guid.NewGuid();
-
-        orderRequest.CorrelationId = key;
+        var correlationId = Guid.NewGuid();
         
         await _producer
             .Produce(key.ToString(), orderRequest)

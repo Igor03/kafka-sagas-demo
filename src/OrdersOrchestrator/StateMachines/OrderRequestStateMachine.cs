@@ -1,13 +1,11 @@
+using Contracts;
 using MassTransit;
-using OrdersOrchestrator.Activities;
-using OrdersOrchestrator.Contracts;
-using OrdersOrchestrator.Contracts.CustomerValidationEngine;
-using OrdersOrchestrator.Contracts.OrderManagement;
-using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
+using OrdersOrchestrator.StateMachines.CustomActivities;
 
 namespace OrdersOrchestrator.StateMachines;
 
-public class OrderRequestStateMachine : MassTransitStateMachine<OrderRequestSagaInstance>
+public sealed class OrderRequestStateMachine 
+    : MassTransitStateMachine<OrderRequestSagaInstance>
 {
     public OrderRequestStateMachine(IConfiguration configuration)
     {
@@ -71,23 +69,23 @@ public class OrderRequestStateMachine : MassTransitStateMachine<OrderRequestSaga
     private void CorrelateEvents()
     {
         Event(() => OrderRequestedEvent, x => x
-            .CorrelateById(m => m.Message.CorrelationId)
-            .SelectId(m => m.Message.CorrelationId)
+            .CorrelateById(m => m.CorrelationId ?? new Guid())
+            .SelectId(m => m.CorrelationId ?? new Guid())
             .OnMissingInstance(m => m.Discard()));
         
         Event(() => CustomerValidationResponseEvent, x => x
-            .CorrelateById(m => m.Message.CorrelationId)
-            .SelectId(m => m.Message.CorrelationId)
+            .CorrelateById(m => m.CorrelationId ?? new Guid())
+            .SelectId(m => m.CorrelationId ?? new Guid())
             .OnMissingInstance(m => m.Discard()));
         
         Event(() => TaxesCalculationResponseEvent, x => x
-            .CorrelateById(m => m.Message.CorrelationId)
-            .SelectId(m => m.Message.CorrelationId)
+            .CorrelateById(m => m.CorrelationId ?? new Guid())
+            .SelectId(m => m.CorrelationId ?? new Guid())
             .OnMissingInstance(m => m.Discard()));
         
         Event(() => FaultEvent, x => x
-            .CorrelateById(m => m.Message.CorrelationId)
-            .SelectId(m => m.Message.CorrelationId)
+            .CorrelateById(m => m.CorrelationId ?? new Guid())
+            .SelectId(m => m.CorrelationId ?? new Guid())
             .OnMissingInstance(m => m.Discard()));
     }
 

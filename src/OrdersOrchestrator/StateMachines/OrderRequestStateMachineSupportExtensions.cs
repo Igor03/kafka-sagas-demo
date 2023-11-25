@@ -1,10 +1,7 @@
-﻿using MassTransit;
+﻿using Contracts;
+using MassTransit;
 using MassTransit.KafkaIntegration.Activities;
 using MassTransit.SagaStateMachine;
-using OrdersOrchestrator.Contracts;
-using OrdersOrchestrator.Contracts.CustomerValidationEngine;
-using OrdersOrchestrator.Contracts.OrderManagement;
-using OrdersOrchestrator.Contracts.TaxesCalculationEngine;
 
 namespace OrdersOrchestrator.StateMachines;
 
@@ -51,7 +48,7 @@ public static class OrderRequestStateMachineSupportExtensions
                 __Header_Reason = context.Saga.Reason,
             };
 
-            return context.Init<ResponseWrapper<OrderResponseEvent>>(@event);
+            return context.Init<NotificationReply<OrderResponseEvent>>(@event);
         });
 
         return @event;
