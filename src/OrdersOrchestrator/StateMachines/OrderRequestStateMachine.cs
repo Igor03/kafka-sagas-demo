@@ -47,7 +47,6 @@ public sealed class OrderRequestStateMachine
         WhenEnter(NotifyingSourceSystem,
             activityCallback => activityCallback
                 .NotifySourceSystem()
-                .Then(context => LogContext.Info?.Log("Order management system notified: {0}", context.CorrelationId))
                 .Finalize());
 
         During(Final,

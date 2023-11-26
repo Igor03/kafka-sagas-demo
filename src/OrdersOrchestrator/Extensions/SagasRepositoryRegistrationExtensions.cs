@@ -28,4 +28,21 @@ internal static class SagasRepositoryRegistrationExtensions
             configure.DatabaseConfiguration(options);
         });
     }
+    
+    internal static ISagaRegistrationConfigurator<T> ConfigureMongoRepository<TStateMachine, T>(
+        this ISagaRegistrationConfigurator<T> configurator,
+        MongoDb mongoDb)
+        where TStateMachine : class, SagaStateMachine<T>
+        where T : class, SagaStateMachineInstance, ISagaVersion
+    {
+        ArgumentNullException.ThrowIfNull(configurator, nameof(configurator));   
+        ArgumentNullException.ThrowIfNull(mongoDb, nameof(mongoDb));
+
+        return configurator.MongoDbRepository(configure =>
+        {
+            configure.CollectionName = mongoDb.CollectionName;
+            configure.Connection = mongoDb.ConnectionString;
+            configure.DatabaseName = mongoDb.DatabaseName;
+        });
+    }
 }

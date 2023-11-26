@@ -11,6 +11,7 @@
         <PackageReference Include="AspNetCore.HealthChecks.Kafka" Version="7.0.0" />
         <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="7.0.0" />
         <PackageReference Include="MassTransit.EntityFrameworkCore" Version="8.1.1" />
+        <PackageReference Include="MassTransit.MongoDb" Version="8.1.2" />
         <PackageReference Include="MassTransit.Redis" Version="8.1.1" />
         <PackageReference Include="MediatR" Version="12.1.1" />
         <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="7.0.0" />

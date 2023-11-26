@@ -26,7 +26,8 @@ public sealed record Topics
 public sealed record MongoDb
 {
     public string ConnectionString { get; set; } = default!;
-    public string Database { get; set; } = default!;
+    public string DatabaseName { get; set; } = default!;
+    public string CollectionName { get; set; } = default!;
 }
 
 public sealed record RedisDb

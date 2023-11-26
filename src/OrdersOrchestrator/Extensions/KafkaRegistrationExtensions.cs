@@ -5,7 +5,6 @@ using MassTransit;
 using MassTransit.Transports;
 using OrdersOrchestrator.StateMachines;
 using OrdersOrchestrator.Transports;
-using StackExchange.Redis;
 
 namespace OrdersOrchestrator.Extensions;
 
@@ -29,7 +28,7 @@ internal static class KafkaRegistrationExtensions
                 
                 rider
                     .AddSagaStateMachine<OrderRequestStateMachine, OrderRequestSagaInstance>(typeof(OrderRequestSagaDefinition))
-                    .ConfigureRedisRepository<OrderRequestStateMachine, OrderRequestSagaInstance>(kafkaOptions.RedisDb);
+                    .ConfigureMongoRepository<OrderRequestStateMachine, OrderRequestSagaInstance>(kafkaOptions.MongoDb);
 
                 rider.AddProducer<string, NotificationReply<OrderResponseEvent>>(kafkaOptions.Topics.OrderManagementSystemResponse);
                 rider.AddProducer<string, TaxesCalculationRequestEvent>(kafkaOptions.Topics.TaxesCalculationEngineRequest);
