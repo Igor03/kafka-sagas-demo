@@ -1,6 +1,7 @@
 using Contracts.Exceptions;
 using MassTransit;
 using MassTransit.Middleware;
+using MassTransit.Transports;
 using OrdersOrchestrator.Middlewares;
 
 namespace OrdersOrchestrator.StateMachines;
@@ -34,7 +35,9 @@ public class OrderRequestSagaDefinition : SagaDefinition<OrderRequestSagaInstanc
         
         endpointConfigurator.ConfigureError(x =>
         {
-            x.UseFilter(new ErrorTransportFilter());
+            x.UseFilters(
+                new FaultProcessingMiddlewareFilter(context.GetRequiredService<IErrorTransport>()),
+                new ErrorTransportFilter());
         });
         
         base.ConfigureSaga(endpointConfigurator, sagaConfigurator, context);

@@ -6,11 +6,18 @@ namespace OrdersOrchestrator.StateMachines.CustomActivities;
 public sealed class ProcessFaultActivity 
     : IStateMachineActivity<OrderRequestSagaInstance, FaultMessageEvent>
 {
-    Task IStateMachineActivity<OrderRequestSagaInstance, FaultMessageEvent>.Execute(
+    async Task IStateMachineActivity<OrderRequestSagaInstance, FaultMessageEvent>.Execute(
         BehaviorContext<OrderRequestSagaInstance, FaultMessageEvent> context, 
         IBehavior<OrderRequestSagaInstance, FaultMessageEvent> next)
     {
-        throw new NotImplementedException();
+        context.Saga.NotificationReply = new NotificationReply<OrderResponseEvent>()
+        {
+            Reason = context.Message.Exception!.ToString()
+        };
+
+        await next
+            .Execute(context)
+            .ConfigureAwait(false);
     }
 
     async Task IStateMachineActivity<OrderRequestSagaInstance, FaultMessageEvent>.Faulted<TException>(

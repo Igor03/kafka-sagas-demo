@@ -5,13 +5,13 @@ using OrdersOrchestrator.Services;
 
 namespace  OrdersOrchestrator.StateMachines.CustomActivities;
 
-public sealed class TaxesCalculationStepActivity 
+public sealed class TaxesCalculationActivity 
     : IStateMachineActivity<OrderRequestSagaInstance, TaxesCalculationResponseEvent>
 {
     private readonly ITopicProducer<NotificationReply<OrderResponseEvent>> orderResponseEventProducer;
     private readonly IApiService apiService;
     
-    public TaxesCalculationStepActivity(
+    public TaxesCalculationActivity(
         ITopicProducer<NotificationReply<OrderResponseEvent>> orderResponseEventProducer, 
         IApiService apiService)
     {
@@ -49,6 +49,6 @@ public sealed class TaxesCalculationStepActivity
         IBehavior<OrderRequestSagaInstance, TaxesCalculationResponseEvent> next) 
             => await next.Faulted(context).ConfigureAwait(false);
 
-    void IProbeSite.Probe(ProbeContext context) => context.CreateScope(nameof(ReceiveOrderRequestStepActivity));
+    void IProbeSite.Probe(ProbeContext context) => context.CreateScope(nameof(ReceiveOrderRequestActivity));
     void IVisitable.Accept(StateMachineVisitor visitor) => visitor.Visit(this);
 }

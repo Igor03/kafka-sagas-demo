@@ -22,7 +22,13 @@ public sealed class OrdersController : ControllerBase
         var correlationId = Guid.NewGuid();
         
         await _producer
-            .Produce(key.ToString(), orderRequest)
+            .Produce(
+                key.ToString(), 
+                orderRequest, 
+                Pipe.Execute<KafkaSendContext>(p =>
+                {
+                    p.CorrelationId = correlationId;
+                }))
             .ConfigureAwait(false);
 
         return Accepted(new

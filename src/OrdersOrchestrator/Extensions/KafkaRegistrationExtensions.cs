@@ -42,7 +42,7 @@ public static class KafkaRegistrationExtensions
 
                 rider.AddProducer<string, NotificationReply<OrderResponseEvent>>(kafkaOptions.Topics.OrderManagementSystemResponse);
                 rider.AddProducer<string, TaxesCalculationRequestEvent>(kafkaOptions.Topics.TaxesCalculationEngineRequest);
-                rider.AddProducer<CustomerValidationRequestEvent>(kafkaOptions.Topics.CustomerValidationEngineRequest);
+                rider.AddProducer<string, CustomerValidationRequestEvent>(kafkaOptions.Topics.CustomerValidationEngineRequest);
                 rider.AddProducer<string, FaultMessageEvent>(kafkaOptions.Topics.Error);
                 rider.AddProducer<string, OrderRequestEvent>(kafkaOptions.Topics.OrderManagementSystemRequest);
                 

@@ -5,21 +5,18 @@ using OrdersOrchestrator.Services;
 
 namespace OrdersOrchestrator.StateMachines.CustomActivities;
 
-public sealed class ReceiveOrderRequestStepActivity 
+public sealed class ReceiveOrderRequestActivity 
     : IStateMachineActivity<OrderRequestSagaInstance, OrderRequestEvent>
 {
     private readonly IApiService apiService;
-    private readonly ITopicProducer<CustomerValidationRequestEvent> customerValidationEngineProducer;
-    private readonly ITopicProducer<FaultMessageEvent> errorProducer;
+    private readonly ITopicProducer<string, CustomerValidationRequestEvent> customerValidationEngineProducer;
 
-    public ReceiveOrderRequestStepActivity(
+    public ReceiveOrderRequestActivity(
         IApiService apiService, 
-        ITopicProducer<CustomerValidationRequestEvent> customerValidationEngineProducer, 
-        ITopicProducer<FaultMessageEvent> errorProducer)
+        ITopicProducer<string, CustomerValidationRequestEvent> customerValidationEngineProducer)
     {
         this.apiService = apiService;
         this.customerValidationEngineProducer = customerValidationEngineProducer;
-        this.errorProducer = errorProducer;
     }
 
     async Task IStateMachineActivity<OrderRequestSagaInstance, OrderRequestEvent>.Execute(
@@ -40,7 +37,11 @@ public sealed class ReceiveOrderRequestStepActivity
         };
 
         await customerValidationEngineProducer
-            .Produce(customerValidationEvent);
+            .Produce(
+                Guid.NewGuid().ToString(),
+                customerValidationEvent,
+                context.CancellationToken)
+            .ConfigureAwait(false);
 
         await next.Execute(context)
             .ConfigureAwait(false);
@@ -49,31 +50,9 @@ public sealed class ReceiveOrderRequestStepActivity
     async Task IStateMachineActivity<OrderRequestSagaInstance, OrderRequestEvent>.Faulted<TException>(
         BehaviorExceptionContext<OrderRequestSagaInstance, OrderRequestEvent, TException> context, 
         IBehavior<OrderRequestSagaInstance, OrderRequestEvent> next) 
-    {
-        // Updating saga with useful information about the current state
-        context.Saga.Reason = context.Exception.Message;
-        context.Saga.UpdatedAt = DateTime.Now;
-        
-        LogContext.Info?.Log("Processing fault for {0}: {1}", context.Event.Name, context.Saga.CorrelationId);
-        
-        // In case we need to process more complex fault compensation routines
-        var errorEvent = new
-        {
-            context.Saga.CorrelationId,
-            context.Message,
-            // Here we can use a Pipe<>
-            __Header_Reason = context.Exception.Message,
-        };
-            
-        await errorProducer
-            .Produce(errorEvent)
-            .ConfigureAwait(false);
-
-        await next.Execute(context)
-            .ConfigureAwait(false);
-    }
+        => await next.Faulted(context).ConfigureAwait(false);
     
-    void IProbeSite.Probe(ProbeContext context) => context.CreateScope(nameof(ReceiveOrderRequestStepActivity));
+    void IProbeSite.Probe(ProbeContext context) => context.CreateScope(nameof(ReceiveOrderRequestActivity));
     void IVisitable.Accept(StateMachineVisitor visitor) => visitor.Visit(this);
     
 }

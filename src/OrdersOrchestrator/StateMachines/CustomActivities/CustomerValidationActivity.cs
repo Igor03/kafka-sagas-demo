@@ -5,13 +5,13 @@ using OrdersOrchestrator.Services;
 
 namespace OrdersOrchestrator.StateMachines.CustomActivities;
 
-public sealed class CustomerValidationStepActivity 
+public sealed class CustomerValidationActivity 
     : IStateMachineActivity<OrderRequestSagaInstance, CustomerValidationResponseEvent>
 {
     private readonly ITopicProducer<TaxesCalculationRequestEvent> taxesCalculationEngineProducer;
     private readonly IApiService apiService;
     
-    public CustomerValidationStepActivity(
+    public CustomerValidationActivity(
         ITopicProducer<TaxesCalculationRequestEvent> taxesCalculationEngineProducer, 
         IApiService apiService)
     {
@@ -43,7 +43,7 @@ public sealed class CustomerValidationStepActivity
         IBehavior<OrderRequestSagaInstance, CustomerValidationResponseEvent> next) 
             => await next.Faulted(context).ConfigureAwait(false);
 
-    void IProbeSite.Probe(ProbeContext context) => context.CreateScope(nameof(CustomerValidationStepActivity));
+    void IProbeSite.Probe(ProbeContext context) => context.CreateScope(nameof(CustomerValidationActivity));
     void IVisitable.Accept(StateMachineVisitor visitor) => visitor.Visit(this);
 }
 
