@@ -36,7 +36,7 @@ public sealed class OrderRequestStateMachine
             When(TaxesCalculationResponseEvent)
                 .UpdateSaga()
                 .Activity(config => config.OfType<TaxesCalculationActivity>())
-                .TransitionTo(FinishedOrder),
+                .TransitionTo(NotifyingSourceSystem),
             When(FaultEvent)
                 .Activity(config => config.OfType<ProcessFaultActivity>())
                 .TransitionTo(Faulted));
@@ -44,7 +44,7 @@ public sealed class OrderRequestStateMachine
         WhenEnter(Faulted,
             context => context.TransitionTo(NotifyingSourceSystem));
 
-        WhenEnter(FinishedOrder,
+        WhenEnter(NotifyingSourceSystem,
             activityCallback => activityCallback
                 .NotifySourceSystem()
                 .Then(context => LogContext.Info?.Log("Order management system notified: {0}", context.CorrelationId))
@@ -88,7 +88,6 @@ public sealed class OrderRequestStateMachine
     
     public State? ValidatingCustomer { get; set; }
     public State? CalculatingTaxes { get; set; }
-    public State? FinishedOrder { get; set; }
     public State? NotifyingSourceSystem { get; set; }
     public State? Faulted { get; set; }
     public Event<OrderRequestEvent>? OrderRequestedEvent { get; set; }

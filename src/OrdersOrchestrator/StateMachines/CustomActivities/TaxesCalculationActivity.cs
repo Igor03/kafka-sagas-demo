@@ -8,14 +8,11 @@ namespace  OrdersOrchestrator.StateMachines.CustomActivities;
 public sealed class TaxesCalculationActivity 
     : IStateMachineActivity<OrderRequestSagaInstance, TaxesCalculationResponseEvent>
 {
-    private readonly ITopicProducer<NotificationReply<OrderResponseEvent>> orderResponseEventProducer;
     private readonly IApiService apiService;
     
-    public TaxesCalculationActivity(
-        ITopicProducer<NotificationReply<OrderResponseEvent>> orderResponseEventProducer, 
+    public TaxesCalculationActivity( 
         IApiService apiService)
     {
-        this.orderResponseEventProducer = orderResponseEventProducer;
         this.apiService = apiService;
     }
 
@@ -28,20 +25,20 @@ public sealed class TaxesCalculationActivity
             throw new NotATransientException("Error during order request validation!");
         }
 
-        var orderResponseEvent = new OrderResponseEvent
+        context.Saga.NotificationReply = new NotificationReply<OrderResponseEvent>
         {
-            CustomerId = context.Saga.CustomerId!,
-            CustomerType= context.Saga.CustomerType!,
-            TaxesCalculation = context.Message,
+            Success = true,
+            Data = new OrderResponseEvent
+            {
+                CustomerId = context.Saga.CustomerId!,
+                CustomerType = context.Saga.CustomerType!,
+                TaxesCalculation = context.Message,
+            }
         };
 
-        await orderResponseEventProducer.Produce(new NotificationReply<OrderResponseEvent>
-        {
-            Data = orderResponseEvent,
-            Success = true,
-        });
-
-        await next.Execute(context);
+        await next
+            .Execute(context)
+            .ConfigureAwait(false);
     }
 
     async Task IStateMachineActivity<OrderRequestSagaInstance, TaxesCalculationResponseEvent>.Faulted<TException>(

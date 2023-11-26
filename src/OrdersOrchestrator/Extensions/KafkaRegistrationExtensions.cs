@@ -2,12 +2,14 @@ using Confluent.Kafka;
 using Contracts;
 using Contracts.Configuration;
 using MassTransit;
+using MassTransit.Transports;
 using OrdersOrchestrator.StateMachines;
+using OrdersOrchestrator.Transports;
 using StackExchange.Redis;
 
 namespace OrdersOrchestrator.Extensions;
 
-public static class KafkaRegistrationExtensions
+internal static class KafkaRegistrationExtensions
 {
     internal static IServiceCollection AddCustomKafka(this IServiceCollection services, IConfiguration configuration)
     {
@@ -23,22 +25,11 @@ public static class KafkaRegistrationExtensions
             massTransit.UsingInMemory((context, cfg) =>  cfg.ConfigureEndpoints(context));
             massTransit.AddRider(rider =>
             {
-                rider.AddSagaStateMachine<OrderRequestStateMachine, OrderRequestSagaInstance>(typeof(OrderRequestSagaDefinition))
-                // .InMemoryRepository();
-                .RedisRepository(p =>
-                {
-                    var redisOptions = new ConfigurationOptions
-                    {
-                        EndPoints = { kafkaOptions.RedisDb.Endpoint },
-                        Password = kafkaOptions.RedisDb.Password,
-                    };
-                    
-                    p.KeyPrefix = kafkaOptions.RedisDb.KeyPrefix;
-                    
-                    // Since we have multiple services and states
-                    p.ConcurrencyMode = ConcurrencyMode.Pessimistic;
-                    p.DatabaseConfiguration(redisOptions);
-                });
+                rider.AddTransient<IErrorTransport, FaultTransport>();
+                
+                rider
+                    .AddSagaStateMachine<OrderRequestStateMachine, OrderRequestSagaInstance>(typeof(OrderRequestSagaDefinition))
+                    .ConfigureRedisRepository<OrderRequestStateMachine, OrderRequestSagaInstance>(kafkaOptions.RedisDb);
 
                 rider.AddProducer<string, NotificationReply<OrderResponseEvent>>(kafkaOptions.Topics.OrderManagementSystemResponse);
                 rider.AddProducer<string, TaxesCalculationRequestEvent>(kafkaOptions.Topics.TaxesCalculationEngineRequest);

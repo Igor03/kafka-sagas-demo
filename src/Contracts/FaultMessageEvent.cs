@@ -2,6 +2,6 @@
 
 public record FaultMessageEvent
 {
-    public object? Message { get; set; } = default!;
-    public Exception? Exception { get; set; }
+    public object? Event { get; set; } = default!;
+    public string? ExceptionMessage { get; set; }
 }

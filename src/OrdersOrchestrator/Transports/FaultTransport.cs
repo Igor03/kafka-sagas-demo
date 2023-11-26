@@ -6,22 +6,29 @@ namespace OrdersOrchestrator.Transports;
 
 public sealed class FaultTransport : IErrorTransport
 {
+    private readonly IServiceScopeFactory serviceScopeFactory;
+    
+    public FaultTransport(IServiceScopeFactory serviceScopeFactory)
+    {
+        this.serviceScopeFactory = serviceScopeFactory;
+    }
     async Task IErrorTransport.Send(ExceptionReceiveContext context)
     {
         ArgumentNullException.ThrowIfNull(context, nameof(context));
-        
+
         var consumeContext = context.GetPayload<ConsumeContext>();
+
+        using var scope = serviceScopeFactory.CreateScope();
+        var faultTopicProducer = scope
+            .ServiceProvider
+            .GetRequiredService<ITopicProducer<string, FaultMessageEvent>>();
         
-        var faultTopicProducer = consumeContext
-            .GetServiceOrCreateInstance<ITopicProducer<string, FaultMessageEvent>>();
-        
-        var canReadMessage = consumeContext
-            .TryGetMessage<object>(out var message);
+        consumeContext.TryGetMessage<object>(out var incomingConsume);
 
         var faultEvent = new FaultMessageEvent
         {
-            Message = canReadMessage ? message : null,
-            Exception = context.Exception,
+            Event = incomingConsume?.Message,
+            ExceptionMessage = context.Exception.InnerException?.Message
         };
         
         await faultTopicProducer
@@ -31,7 +38,7 @@ public sealed class FaultTransport : IErrorTransport
                 Pipe.Execute<KafkaSendContext>(p =>
                 {
                     p.CorrelationId = consumeContext.CorrelationId;
-                    p.Headers.SetHostHeaders();
+                    p.Headers.SetExceptionHeaders(context);
                 }),
                 context.CancellationToken)
             .ConfigureAwait(false);

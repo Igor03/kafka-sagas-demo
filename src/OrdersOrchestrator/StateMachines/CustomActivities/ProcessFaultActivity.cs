@@ -12,7 +12,7 @@ public sealed class ProcessFaultActivity
     {
         context.Saga.NotificationReply = new NotificationReply<OrderResponseEvent>()
         {
-            Reason = context.Message.Exception!.ToString()
+            Reason = context.Message.ExceptionMessage
         };
 
         await next

@@ -8,11 +8,11 @@ namespace OrdersOrchestrator.StateMachines.CustomActivities;
 public sealed class CustomerValidationActivity 
     : IStateMachineActivity<OrderRequestSagaInstance, CustomerValidationResponseEvent>
 {
-    private readonly ITopicProducer<TaxesCalculationRequestEvent> taxesCalculationEngineProducer;
+    private readonly ITopicProducer<string, TaxesCalculationRequestEvent> taxesCalculationEngineProducer;
     private readonly IApiService apiService;
     
     public CustomerValidationActivity(
-        ITopicProducer<TaxesCalculationRequestEvent> taxesCalculationEngineProducer, 
+        ITopicProducer<string, TaxesCalculationRequestEvent> taxesCalculationEngineProducer, 
         IApiService apiService)
     {
         this.taxesCalculationEngineProducer = taxesCalculationEngineProducer;
@@ -34,8 +34,16 @@ public sealed class CustomerValidationActivity
             CustomerType = context.Message.CustomerType
         };
         
-        await taxesCalculationEngineProducer.Produce(taxesCalculationRequestEvent);
-        await next.Execute(context);
+        await taxesCalculationEngineProducer
+            .Produce(
+                Guid.NewGuid().ToString(), 
+                taxesCalculationRequestEvent,
+                context.CancellationToken)
+            .ConfigureAwait(false);
+        
+        await next
+            .Execute(context)
+            .ConfigureAwait(false);
     }
 
     async Task IStateMachineActivity<OrderRequestSagaInstance, CustomerValidationResponseEvent>.Faulted<TException>(
