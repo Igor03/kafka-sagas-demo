@@ -4,6 +4,12 @@
 
 This was built as a POC to validate the usage of the Sagas pattern using some of the components provided by the Masstransit package. Here we tested some of the most basic Masstransit features related to the Sagas pattern implementation such as State Machines, State Machines Activities, Events Orchestration, Message Retry/Redelivery and Instance persistence to name a few. To develop this we used the [Masstransit documentation](https://masstransit.io/) and the [Kafka YouTube series](https://www.youtube.com/watch?v=CJ_srcJiIKs&list=PLx8uyNNs1ri0RJ3hqwcDze6yAkrmK1QI5 ) by Chris Patterson.
 
+## Basic sagas flow
+
+Here we are presenting a basic flow of how all the components should work. We also implemented a fault recovery pipeline using an error topic.
+
+![alt text](/static/sagas-flow.png)
+
 ## External servers
 
 To develop this application, we used some popular servers such as [Confluent Kafka Cloud](https://www.confluent.io/), [MongoDB Atlas](https://www.mongodb.com/atlas) and [Redis on Cloud](https://redis.com/). All the mentioned resources are very easy to use and have free trial plans.
