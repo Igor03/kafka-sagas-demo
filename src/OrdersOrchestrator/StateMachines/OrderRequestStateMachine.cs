@@ -56,7 +56,7 @@ public sealed class OrderRequestStateMachine
             Ignore(FaultEvent));
         
         // Delete finished saga instances from the repository
-        // SetCompletedWhenFinalized();
+        SetCompletedWhenFinalized();
     }
 
     private void CorrelateEvents()
