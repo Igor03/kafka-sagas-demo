@@ -13,6 +13,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CustomerValidationEngine", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Contracts", "src\Contracts\Contracts.csproj", "{525D8152-B5FE-498E-8A89-DA77D1E35714}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{13394E16-96DA-4DC1-A87A-AE4F05A21BDA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{46C57652-908F-497B-8669-DE490A04673B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrdersOrchestratorTests", "tests\OrdersOrchestratorTests\OrdersOrchestratorTests.csproj", "{4357DA63-2882-4930-B02F-FD2AA63DB59F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,11 +45,23 @@ Global
 		{525D8152-B5FE-498E-8A89-DA77D1E35714}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{525D8152-B5FE-498E-8A89-DA77D1E35714}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{525D8152-B5FE-498E-8A89-DA77D1E35714}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4357DA63-2882-4930-B02F-FD2AA63DB59F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4357DA63-2882-4930-B02F-FD2AA63DB59F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4357DA63-2882-4930-B02F-FD2AA63DB59F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4357DA63-2882-4930-B02F-FD2AA63DB59F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3CDE34AD-0937-420D-8A56-F3D50AAFBCEA}
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{525D8152-B5FE-498E-8A89-DA77D1E35714} = {13394E16-96DA-4DC1-A87A-AE4F05A21BDA}
+		{259DFD73-14B2-4500-A614-1BDA4F0CC6CD} = {13394E16-96DA-4DC1-A87A-AE4F05A21BDA}
+		{02C3961C-8C73-4607-9398-D4BAF7AE881D} = {13394E16-96DA-4DC1-A87A-AE4F05A21BDA}
+		{A6EDEE5B-9D7C-4F93-8F7B-05F9FA90DACF} = {13394E16-96DA-4DC1-A87A-AE4F05A21BDA}
+		{901C6735-14DF-4067-AE6D-22D42E465BEB} = {13394E16-96DA-4DC1-A87A-AE4F05A21BDA}
+		{4357DA63-2882-4930-B02F-FD2AA63DB59F} = {46C57652-908F-497B-8669-DE490A04673B}
 	EndGlobalSection
 EndGlobal
